@@ -1,0 +1,51 @@
+---
+description: "Project architecture and system design rules"
+alwaysApply: true
+---
+
+# Architecture Rules
+
+## Core Principles
+
+- Prefer clean and maintainable architecture
+- Prioritize readability over clever code
+- Keep business logic separated from UI and infrastructure
+- Avoid tight coupling between modules
+- Prefer composition over inheritance
+- Build reusable and scalable modules
+
+---
+
+# Project Structure
+
+## Frontend Structure
+
+```txt
+src/
+├── app/
+├── components/
+├── features/
+├── pages/
+├── hooks/
+├── services/
+├── store/
+├── layouts/
+├── utils/
+├── types/
+└── styles/
+```
+
+src/
+├── modules/
+│ ├── auth/
+│ ├── users/
+│ └── products/
+├── controllers/
+├── services/
+├── repositories/
+├── middlewares/
+├── routes/
+├── utils/
+├── configs/
+├── types/
+└── database/

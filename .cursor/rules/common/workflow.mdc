@@ -1,0 +1,54 @@
+---
+description: "Development workflow and implementation process"
+alwaysApply: true
+---
+
+# Development Workflow
+
+## Before Coding
+
+- Think about architecture first
+- Break complex features into smaller tasks
+- Identify dependencies and edge cases
+- Prefer reusable solutions
+
+## Implementation
+
+- Build features incrementally
+- Keep components and functions small
+- Write clean and typed code
+- Use async/await
+- Handle errors properly
+
+## Testing Mindset
+
+- Verify critical functionality
+- Test edge cases
+- Avoid breaking existing features
+- Prefer simple and maintainable tests
+
+## Code Review Mindset
+
+After writing code:
+
+- Check readability
+- Check type safety
+- Check duplicate logic
+- Check security implications
+- Check naming consistency
+
+## Before Commit
+
+Verify:
+
+- No TypeScript errors
+- No console.log
+- No unused imports
+- No hardcoded secrets
+- No obvious duplication
+
+## Git Workflow
+
+- Use conventional commits
+- Keep commits focused and small
+- Commit after completing a feature

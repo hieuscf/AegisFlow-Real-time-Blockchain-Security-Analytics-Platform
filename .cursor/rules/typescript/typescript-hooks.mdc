@@ -1,0 +1,27 @@
+---
+description: "TypeScript development workflow"
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: false
+---
+
+# TypeScript Development Workflow
+
+## After Editing Code
+
+Always:
+
+- Run Prettier formatting
+- Check TypeScript errors
+- Check ESLint warnings
+- Remove unused imports
+- Avoid console.log in production code
+
+## Before Finishing Tasks
+
+Verify:
+
+- No type errors
+- No duplicate logic
+- No debug logs
+- Environment variables are safe
+- Error handling exists

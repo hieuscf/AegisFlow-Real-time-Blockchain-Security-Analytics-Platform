@@ -1,0 +1,59 @@
+---
+description: "Frontend architecture and React development rules"
+globs: ["src/**/*.tsx", "src/**/*.ts"]
+alwaysApply: false
+---
+
+# Frontend Rules
+
+## Stack
+
+- Use React + TypeScript
+- Use Vite
+- Use TailwindCSS
+- Use functional components only
+
+---
+
+# Component Design
+
+- Keep components small and reusable
+- One component = one responsibility
+- Avoid deeply nested JSX
+- Extract reusable UI into shared components
+- Prefer composition over prop-heavy components
+
+---
+
+# State Management
+
+- Use local state when possible
+- Use Zustand for global state
+- Avoid unnecessary global state
+- Avoid prop drilling
+
+---
+
+# Hooks
+
+- Prefer reusable custom hooks
+- Keep hooks focused on one concern
+- Avoid business logic directly inside components
+
+Example:
+
+```typescript
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+```

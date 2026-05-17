@@ -1,0 +1,47 @@
+---
+
+### `devops.mdc`
+
+```md id="m8q5t2"
+---
+
+description: "DevOps, Docker, CI/CD, and infrastructure rules"
+alwaysApply: true
+
+---
+
+# DevOps Rules
+
+## General Principles
+
+- Prefer reproducible environments
+- Keep infrastructure portable
+- Avoid machine-specific configurations
+- Use environment variables for configuration
+
+---
+
+# Docker
+
+- Dockerize backend services
+- Use lightweight images when possible
+- Use multi-stage builds for production
+- Avoid running containers as root
+
+Example:
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+CMD ["npm", "start"]
+```

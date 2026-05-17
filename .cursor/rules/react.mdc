@@ -1,0 +1,33 @@
+---
+description: "React + Vite frontend development rules"
+globs: ["src/**/*.tsx", "src/**/*.ts"]
+alwaysApply: false
+---
+
+# React + Vite Rules
+
+## Stack
+
+- Use React + TypeScript
+- Use Vite as the build tool
+- Use functional components only
+- Use TailwindCSS for styling
+
+---
+
+# Project Structure
+
+```txt
+src/
+├── app/
+├── components/
+├── features/
+├── pages/
+├── hooks/
+├── services/
+├── store/
+├── layouts/
+├── utils/
+├── types/
+└── styles/
+```

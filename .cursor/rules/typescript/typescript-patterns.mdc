@@ -1,0 +1,39 @@
+---
+description: "TypeScript architectural patterns"
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# TypeScript Patterns
+
+## API Response Format
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    message: string;
+    code?: string;
+  };
+}
+```
+
+---
+
+# Cái QUAN TRỌNG nhất
+
+Pattern rules mạnh hơn style rules rất nhiều.
+
+---
+
+## Style rules
+
+```txt id="9zj9w7"
+Use async/await
+Avoid any
+```
+
+Repository Pattern
+Service Pattern
+API Response Pattern

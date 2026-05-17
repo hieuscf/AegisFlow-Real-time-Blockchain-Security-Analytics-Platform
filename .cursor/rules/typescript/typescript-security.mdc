@@ -1,0 +1,27 @@
+---
+description: "TypeScript security extending common rules"
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: true
+---
+
+# Security Rules
+
+## Secret Management
+
+NEVER hardcode:
+
+- API keys
+- JWT secrets
+- Database URLs
+- Access tokens
+- Passwords
+
+ALWAYS use environment variables:
+
+```typescript
+const apiKey = process.env.OPENAI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("OPENAI_API_KEY not configured");
+}
+```

@@ -1,0 +1,77 @@
+---
+
+### `backend.mdc`
+
+```md id="p2n7c8"
+---
+
+description: "Backend architecture and Node.js development rules"
+globs: ["server/**/*.ts", "src/**/*.ts"]
+alwaysApply: false
+
+---
+
+# Backend Rules
+
+## Stack
+
+- Use Node.js + TypeScript
+- Use Express or NestJS
+- Use Prisma ORM
+- Use PostgreSQL
+
+---
+
+# Architecture
+
+Use clean architecture principles:
+
+- Controllers handle HTTP logic only
+- Services contain business logic
+- Repositories handle database access
+- Utilities contain shared helpers
+
+---
+
+# Controllers
+
+Controllers should:
+
+- Validate request input
+- Return proper HTTP responses
+- Call services only
+- Avoid business logic
+
+---
+
+# Services
+
+Services should:
+
+- Handle business logic
+- Coordinate repositories
+- Be reusable and testable
+- Throw meaningful errors
+
+---
+
+# Repositories
+
+Repositories should:
+
+- Handle database queries only
+- Avoid business logic
+- Return typed data
+- Use Prisma safely
+
+Example:
+
+```typescript
+interface Repository<T> {
+  findAll(): Promise<T[]>;
+  findById(id: string): Promise<T | null>;
+  create(data: unknown): Promise<T>;
+  update(id: string, data: unknown): Promise<T>;
+  delete(id: string): Promise<void>;
+}
+```
