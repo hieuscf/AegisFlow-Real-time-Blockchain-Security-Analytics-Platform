@@ -1,89 +1,152 @@
-# AegisFlow — project-context.md
+# AegisFlow — PROJECT_CONTEXT.md
 
-## Project Name
+# 1. Project Overview
 
-AegisFlow
+AegisFlow là một nền tảng Real-time Blockchain Security & Analytics Platform được xây dựng nhằm giám sát, phân tích và phát hiện các hành vi bất thường trên thị trường Web3 theo thời gian thực.
 
----
+Dự án tập trung vào:
 
-# Project Description
+- Theo dõi Swap Events từ các DEX
+- Phân tích biến động giá token
+- Phát hiện Rug Pull và Flash Crash
+- Tự động audit Smart Contract
+- Realtime Security Alerts
+- Streaming dữ liệu realtime tới dashboard
 
-AegisFlow is a real-time Blockchain Security & Analytics Platform designed to monitor Web3 market activity, detect abnormal on-chain behavior, analyze smart contract risks, and provide real-time security alerts across multiple blockchain ecosystems.
+Mục tiêu của dự án là xây dựng một hệ thống có kiến trúc gần với production thực tế nhưng vẫn đủ lightweight để phù hợp với:
 
-The platform combines:
-
-- Real-time blockchain indexing
-- Market anomaly detection
-- Whale wallet tracking
-- Smart contract security analysis
-- MEV attack detection
-- Event-driven microservices
-- Cloud-native infrastructure
-- Real-time analytics dashboards
-
-The primary goal is to build a production-grade Web3 security and market intelligence system capable of processing large volumes of blockchain events with low latency and high scalability.
+- Solo developer
+- MVP development
+- Vibe coding workflow
+- Local development
+- Docker deployment
 
 ---
 
-# Core Objectives
+# 2. Project Goals
 
-## Real-time Monitoring
+## Primary Goals
 
-Monitor blockchain activity in real-time using WebSockets, RPC nodes, and mempool listeners.
+### Realtime Blockchain Monitoring
 
-## Market Integrity
-
-Detect suspicious or manipulative behavior such as:
-
-- Rug Pulls
-- Pump & Dump
-- Liquidity Drains
-- Flash Loan Attacks
-- Sandwich Attacks
-- Front-running
-- Whale Movements
-
-## Smart Contract Security
-
-Automatically analyze smart contracts for vulnerabilities and malicious behavior using static analysis tools.
-
-## Scalable Event Processing
-
-Use Kafka-based event-driven architecture to process millions of events efficiently.
-
-## Cloud-native Architecture
-
-Deploy services using Kubernetes with observability, scalability, and fault tolerance.
+Theo dõi dữ liệu blockchain theo thời gian thực thông qua WebSocket RPC nodes.
 
 ---
 
-# Architecture Style
+### Event Streaming Architecture
 
-The project follows:
-
-- Event-Driven Architecture
-- Microservices Architecture
-- Domain-Driven Design
-- Real-time Streaming Architecture
-- Cloud-native Infrastructure
-- DevSecOps Principles
+Sử dụng Kafka làm event bus để xử lý dữ liệu realtime theo kiến trúc event-driven.
 
 ---
 
-# High-Level Architecture
+### Market Anomaly Detection
+
+Phát hiện:
+
+- Price crash
+- Rug pull
+- Liquidity drain
+- Extreme volatility
+
+---
+
+### Automated Smart Contract Security Analysis
+
+Tự động quét Smart Contract bằng Slither khi phát hiện abnormal activity.
+
+---
+
+### Realtime Frontend Dashboard
+
+Hiển thị:
+
+- Realtime trading chart
+- Live security alerts
+- WebSocket streaming data
+
+---
+
+### Web3-native Authentication
+
+Sử dụng:
+
+- WalletConnect
+- SIWE (Sign-In With Ethereum)
+
+Không sử dụng:
+
+- Email/password authentication
+
+---
+
+# 3. MVP Scope
+
+Phiên bản hiện tại là MVP (Minimum Viable Product).
+
+MVP chỉ bao gồm:
+
+- Blockchain Indexer
+- Kafka Streaming
+- Analytics Core
+- Realtime Alerts
+- Smart Contract Auditor
+- Frontend Dashboard
+- Docker Infrastructure
+
+---
+
+# 4. Architecture Philosophy
+
+Dự án được thiết kế theo hướng:
+
+- Event-driven
+- Realtime-first
+- Modular architecture
+- Lightweight infrastructure
+- Low-latency communication
+- Future scalability
+
+---
+
+# 5. Why This Architecture
+
+Ban đầu hệ thống được thiết kế theo hướng nhiều microservices độc lập.
+
+Tuy nhiên để:
+
+- Giảm complexity
+- Giảm resource usage
+- Dễ debug
+- Dễ hoàn thành MVP
+- Tối ưu workflow với Cursor AI
+
+kiến trúc hiện tại đã được tối giản thành:
+
+- 1 ingestion service
+- 1 analytics core service
+- 1 frontend app
+
+Điều này giúp:
+
+- Vẫn giữ mindset production
+- Nhưng tránh overengineering
+
+---
+
+# 6. High-Level System Flow
 
 ```txt
-Blockchain Nodes
+Blockchain RPC Node
         ↓
-Indexer Services (Go)
+Indexer Service (Go)
         ↓
-Kafka Event Bus
+Kafka Topic
         ↓
-Analytics & Security Services
+Analytics Core (Node.js)
         ↓
 Redis / PostgreSQL
         ↓
-API Gateway
+Socket.IO
         ↓
-Realtime Dashboard
+Frontend Dashboard
 ```
