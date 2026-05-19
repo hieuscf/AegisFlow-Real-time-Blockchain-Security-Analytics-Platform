@@ -1,10 +1,11 @@
 import { loadConfig } from "./config/env";
+import { connectRedis, disconnectRedis } from "./redis/client";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 let isShuttingDown = false;
 
-function logStartup(): void {
+async function logStartup(): Promise<void> {
   const config = loadConfig();
 
   console.log("[analytics-core] Starting AegisFlow Analytics Core");
@@ -13,7 +14,10 @@ function logStartup(): void {
       `group=${config.kafka.groupId} topic=${config.kafka.topic}`,
   );
   console.log(`[analytics-core] Redis url=${config.redis.url}`);
-  console.log("[analytics-core] Service ready (foundation bootstrap)");
+
+  await connectRedis();
+
+  console.log("[analytics-core] Service ready");
 }
 
 async function shutdown(signal: string): Promise<void> {
@@ -30,8 +34,11 @@ async function shutdown(signal: string): Promise<void> {
   }, SHUTDOWN_TIMEOUT_MS);
 
   try {
-    // Future: disconnect Kafka consumer, Redis client, HTTP server, etc.
+    await disconnectRedis();
     console.log("[analytics-core] Cleanup complete");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[analytics-core] Shutdown error:", message);
   } finally {
     clearTimeout(forceExitTimer);
     process.exit(0);
@@ -58,9 +65,16 @@ function registerSignalHandlers(): void {
   });
 }
 
-function main(): void {
+async function main(): Promise<void> {
   registerSignalHandlers();
-  logStartup();
+
+  try {
+    await logStartup();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[analytics-core] Startup failed:", message);
+    process.exit(1);
+  }
 }
 
-main();
+void main();
