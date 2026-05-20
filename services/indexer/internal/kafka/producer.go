@@ -29,7 +29,8 @@ func NewKafkaProducer(brokers []string, topic string) *KafkaProducer {
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequireAll,
 		BatchTimeout: 10 * time.Millisecond,
-		Compression:  kafka.Snappy,
+		// Gzip — compatible with KafkaJS (Snappy is not supported by kafkajs consumers).
+		Compression: kafka.Gzip,
 		Async:        false,
 	}
 

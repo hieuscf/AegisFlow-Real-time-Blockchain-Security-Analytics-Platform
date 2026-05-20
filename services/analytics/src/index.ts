@@ -1,7 +1,8 @@
 import { loadConfig } from "./config/env";
+import { startKafkaConsumer, stopKafkaConsumer } from "./kafka/consumer";
 import { connectRedis, disconnectRedis } from "./redis/client";
 
-const SHUTDOWN_TIMEOUT_MS = 10_000;
+const SHUTDOWN_TIMEOUT_MS = 15_000;
 
 let isShuttingDown = false;
 
@@ -16,6 +17,7 @@ async function logStartup(): Promise<void> {
   console.log(`[analytics-core] Redis url=${config.redis.url}`);
 
   await connectRedis();
+  await startKafkaConsumer();
 
   console.log("[analytics-core] Service ready");
 }
@@ -34,8 +36,9 @@ async function shutdown(signal: string): Promise<void> {
   }, SHUTDOWN_TIMEOUT_MS);
 
   try {
+    await stopKafkaConsumer();
     await disconnectRedis();
-    console.log("[analytics-core] Cleanup complete");
+    console.log("[analytics-core] Shutdown complete");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[analytics-core] Shutdown error:", message);
