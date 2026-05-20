@@ -1,33 +1,49 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { clearAuthToken, getAuthToken } from '@/lib/auth';
+import type {
+  AlertsResponse,
+  ApiErrorBody,
+  AuthVerifyPayload,
+  AuthVerifyResponse,
+  HealthResponse,
+} from '@/types/api';
 
-type RequestOptions = Omit<RequestInit, 'body'> & {
-  body?: unknown;
-};
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, headers, ...rest } = options;
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15_000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-
-  if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.statusText}`);
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  return response.json() as Promise<T>;
-}
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<ApiErrorBody>) => {
+    if (error.response?.status === 401) {
+      clearAuthToken();
+    }
+    return Promise.reject(error);
+  },
+);
 
 export const api = {
-  getHealth: () => request<{ status: string }>('/health'),
-  verifySiwe: (payload: { message: string; signature: string }) =>
-    request<{ token: string }>('/api/auth/verify', { method: 'POST', body: payload }),
-  getAlerts: () => request<{ data: unknown[] }>('/api/alerts'),
-};
+  getHealth: () => apiClient.get<HealthResponse>('/health').then((r) => r.data),
 
-export { API_BASE_URL };
+  verifySiwe: (payload: AuthVerifyPayload) =>
+    apiClient
+      .post<AuthVerifyResponse>('/api/auth/verify', payload)
+      .then((r) => r.data),
+
+  getAlerts: () => apiClient.get<AlertsResponse>('/api/alerts').then((r) => r.data),
+};

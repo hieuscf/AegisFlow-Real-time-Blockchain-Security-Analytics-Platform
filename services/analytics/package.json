@@ -2,7 +2,7 @@
   "name": "@aegisflow/analytics-core",
   "version": "0.1.0",
   "private": true,
-  "description": "AegisFlow Analytics Core — Kafka consumer, realtime analytics, Redis cache",
+  "description": "AegisFlow Analytics Core — Kafka, anomaly detection, alerts, SIWE, WebSocket",
   "main": "dist/index.js",
   "scripts": {
     "dev": "node ./node_modules/ts-node-dev/lib/bin.js --respawn --transpile-only src/index.ts",
@@ -10,13 +10,22 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
+    "express": "^4.21.2",
     "ioredis": "^5.6.0",
-    "kafkajs": "^2.2.4"
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.14.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.10",
+    "@types/pg": "^8.11.11",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.2"
   },

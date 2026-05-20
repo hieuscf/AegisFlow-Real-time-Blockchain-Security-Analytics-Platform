@@ -101,135 +101,87 @@ Serialize SwapEvent thành JSON
 Publish vào Kafka topic:
 
 market-swaps
-Thêm structured logging cho từng swap event 4. Analytics Core Service (Node.js + TypeScript)
+Thêm structured logging cho từng swap event
 
-Gộp:
+# 4. Analytics Core Service (Node.js + TypeScript) — `services/analytics`
 
-API Gateway
-Anomaly Detection
-WebSocket Hub
-SIWE Authentication
-Slither Integration
-4.1 Project Initialization
-Khởi tạo Node.js + TypeScript project
+Gộp: API Gateway · Anomaly Detection · WebSocket Hub · SIWE · Slither
 
-Thiết lập folder structure:
+## 4.1 Project Initialization — [x]
 
-analytics-core/
-├── src/
-│ ├── kafka/
-│ ├── anomaly/
-│ ├── websocket/
-│ ├── auth/
-│ ├── audit/
-│ ├── alerts/
-│ └── database/
-4.2 Install Core Dependencies
-Cài:
-Fastify hoặc Express
-kafkajs
-ioredis
-ethers
-socket.io
-pg hoặc Prisma
-jsonwebtoken
-dotenv
-4.3 Kafka Consumer
-Tạo Kafka Consumer Group
+- [x] Node.js + TypeScript project (`services/analytics`)
+- [x] Folder structure: `kafka/`, `anomaly/`, `websocket/`, `auth/`, `audit/`, `alerts/`, `database/`, `app/`, `analytics/`
 
-Subscribe topic:
+## 4.2 Install Core Dependencies — [x]
 
-market-swaps
-Parse incoming swap events
-Thêm reconnect logic
-4.4 Redis Price Cache
-Kết nối Redis
-Tạo helper lưu historical prices
+- [x] express, kafkajs, ioredis, ethers, socket.io, pg, jsonwebtoken, dotenv, cors
 
-Giới hạn tối đa:
+## 4.3 Kafka Consumer — [x]
 
-10 giá gần nhất mỗi token
-Sử dụng Redis LIST
-4.5 Price Calculation Engine
-Tính realtime token price từ swap event
-Tính moving average
-Chuẩn hóa decimals token
-4.6 Price Anomaly Detection
-Detection Logic
-So sánh giá hiện tại với moving average
+- [x] Consumer group + subscribe `market-swaps`
+- [x] Parse & validate swap events
+- [x] Client retry / crash logging
 
-Trigger alert nếu:
+## 4.4 Redis Price Cache — [x]
 
-price_drop > 50%
+- [x] Redis connection + reconnect
+- [x] LIST cache, max 10 prices per token
 
-Tạo payload:
+## 4.5 Price Calculation Engine — [x]
 
-{
-"type": "CRITICAL_ALERT"
-}
-4.7 Alert Engine
-Tạo module Alert Engine
-Generate:
-INFO
-WARNING
-CRITICAL
-Thêm timestamp cho alerts
-Thêm alert deduplication cơ bản
-4.8 Smart Contract Audit Integration
-Slither CLI
+- [x] Realtime price from swap
+- [x] Moving average
+- [ ] Per-token on-chain decimals (MVP: fixed 18 decimals)
 
-Tạo hàm:
+## 4.6 Price Anomaly Detection — [x]
 
-runContractAudit(contractAddress)
+- [x] Compare price vs moving average
+- [x] Trigger when drop > `ANOMALY_DROP_THRESHOLD` (default 50%)
+- [x] Payload `type: CRITICAL_ALERT`
 
-Dùng:
+## 4.7 Alert Engine — [x]
 
-child_process.exec
-Trigger audit khi detect anomaly
-Slither Result Parser
-Parse output JSON
-Detect:
-selfdestruct
-unlimited mint
-ownership risks
-Audit Protection
-Giới hạn tối đa concurrent audit jobs
-Tránh spam Slither processes
-4.9 PostgreSQL Integration
-Kết nối PostgreSQL
-Tạo bảng:
-alerts
-audit_results
-Lưu toàn bộ lịch sử alerts
-Lưu toàn bộ kết quả audit
-4.10 Web3 Authentication (SIWE)
-API
+- [x] INFO / WARNING / CRITICAL
+- [x] Timestamps
+- [x] Basic deduplication (TTL cache)
 
-Tạo endpoint:
+## 4.8 Smart Contract Audit (Slither) — [x]
 
-POST /api/auth/verify
-Verification
-Verify wallet signature bằng ethers
-Generate JWT session
-Validate nonce
-4.11 WebSocket Hub
-Socket.IO Server
-Khởi tạo Socket.IO server port 8080
-Rooms
+- [x] `runContractAudit(contractAddress)` via `child_process.exec`
+- [x] Trigger on anomaly
+- [x] JSON parser + risk flags (selfdestruct, mint, ownership)
+- [x] Concurrent job limit (`MAX_CONCURRENT_AUDITS`)
+- [ ] Live Slither (set `SLITHER_ENABLED=true` when CLI installed)
 
-Tạo room:
+## 4.9 PostgreSQL Integration — [x]
 
-security-feed
-Broadcasting
-Broadcast realtime alerts
-Broadcast realtime price updates
-Thêm reconnect support 5. Frontend Dashboard (Vite + React)
+- [x] Connection + auto schema
+- [x] Tables `alerts`, `audit_results`
+- [x] Persist alert & audit history
+
+## 4.10 Web3 Authentication (SIWE) — [x]
+
+- [x] `GET /api/auth/nonce`
+- [x] `POST /api/auth/verify`
+- [x] ethers signature verify + JWT session + nonce in Redis
+
+## 4.11 WebSocket Hub — [x]
+
+- [x] Socket.IO on port `8080`, room `security-feed`
+- [x] Broadcast alerts + price updates
+- [x] Client reconnect via Socket.IO transport
+
+---
+
+# 5. Frontend Dashboard (Vite + React)
+
 5.1 Frontend Setup
 Khởi tạo Vite + React + TypeScript
 Cài Tailwind CSS
 Cài Shadcn/UI
 Cài Zustand
 Cài Axios
+Cài gsap
 5.2 Web3 Integration
 Cài Wagmi
 Cài RainbowKit hoặc Privy

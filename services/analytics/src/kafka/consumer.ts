@@ -1,17 +1,11 @@
 import { Kafka, type Consumer, type EachMessagePayload } from "kafkajs";
 
-import {
-  calculateMovingAverage,
-  calculateRealtimePrice,
-} from "../analytics/priceEngine";
+import { processSwapAnalytics } from "../analytics/pipeline";
 import { loadConfig } from "../config/env";
 import type { SwapEvent } from "../models/types";
-import { getTokenPrices, pushTokenPrice } from "../redis/client";
 
 const LOG_PREFIX = "[kafka]";
-const PRICE_ENGINE_PREFIX = "[Price Engine]";
 const CLIENT_ID = "aegisflow-analytics-core";
-const MOVING_AVERAGE_WINDOW = 10;
 
 let kafkaConsumer: SwapKafkaConsumer | null = null;
 
@@ -91,38 +85,6 @@ export function validateSwapEvent(data: unknown): SwapEvent | null {
   };
 }
 
-function logPriceAnalytics(
-  token: string,
-  price: number,
-  movingAverage: number,
-): void {
-  console.log(PRICE_ENGINE_PREFIX);
-  console.log(`Token=${token}`);
-  console.log(`Price=${price.toFixed(8)}`);
-  console.log(`MovingAverage(${MOVING_AVERAGE_WINDOW})=${movingAverage.toFixed(8)}`);
-}
-
-async function processTokenAnalytics(
-  tokenAddress: string,
-  price: number,
-): Promise<void> {
-  if (price <= 0) {
-    return;
-  }
-
-  try {
-    await pushTokenPrice(tokenAddress, price);
-    const recentPrices = await getTokenPrices(tokenAddress);
-    const movingAverage = calculateMovingAverage(recentPrices);
-    logPriceAnalytics(tokenAddress, price, movingAverage);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(
-      `${LOG_PREFIX} Redis analytics failed token=${tokenAddress}: ${message}`,
-    );
-  }
-}
-
 async function processSwapMessage(
   payload: EachMessagePayload,
 ): Promise<void> {
@@ -147,10 +109,7 @@ async function processSwapMessage(
     return;
   }
 
-  const prices = calculateRealtimePrice(swap);
-
-  await processTokenAnalytics(swap.token0, prices.token0PriceInToken1);
-  await processTokenAnalytics(swap.token1, prices.token1PriceInToken0);
+  await processSwapAnalytics(swap);
 
   console.log(
     `${LOG_PREFIX} Message processed tx=${swap.txHash} pair=${swap.pairAddress}`,
@@ -187,7 +146,7 @@ class SwapKafkaConsumer {
     });
 
     this.consumer.on(this.consumer.events.DISCONNECT, () => {
-      console.log(`${LOG_PREFIX} Kafka disconnected`);
+      console.log(`${LOG_PREFIX} Kafka disconnected (client will retry)`);
     });
 
     this.consumer.on(this.consumer.events.CRASH, (event) => {
@@ -208,19 +167,17 @@ class SwapKafkaConsumer {
     void this.consumer
       .run({
         autoCommit: true,
-        eachMessage: async (payload) => {
+        eachMessage: async (messagePayload) => {
           if (!this.isRunning) {
             return;
           }
 
           try {
-            await processSwapMessage(payload);
+            await processSwapMessage(messagePayload);
           } catch (error) {
             const message =
               error instanceof Error ? error.message : String(error);
-            console.error(
-              `${LOG_PREFIX} Message processing error: ${message}`,
-            );
+            console.error(`${LOG_PREFIX} Message processing error: ${message}`);
           }
         },
       })

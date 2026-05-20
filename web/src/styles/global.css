@@ -2,6 +2,27 @@
 @config '../../tailwind.config.js';
 
 @layer base {
+  :root {
+    --background: 220 13% 5%;
+    --foreground: 214 32% 91%;
+    --card: 230 13% 9%;
+    --card-foreground: 214 32% 91%;
+    --primary: 160 100% 50%;
+    --primary-foreground: 220 13% 5%;
+    --secondary: 230 12% 12%;
+    --secondary-foreground: 214 32% 91%;
+    --muted: 230 12% 11%;
+    --muted-foreground: 215 16% 65%;
+    --accent: 160 100% 50%;
+    --accent-foreground: 220 13% 5%;
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 214 32% 98%;
+    --border: 217 19% 17%;
+    --input: 217 19% 17%;
+    --ring: 160 100% 50%;
+    --radius: 0.625rem;
+  }
+
   *,
   *::before,
   *::after {
@@ -13,10 +34,31 @@
   }
 
   body {
-    @apply m-0 min-h-full bg-aegis-bg font-sans text-slate-100;
+    @apply m-0 min-h-full bg-aegis-bg font-sans text-foreground;
+    background-image:
+      radial-gradient(ellipse 70% 45% at 50% -15%, rgba(0, 255, 163, 0.07), transparent),
+      radial-gradient(ellipse 50% 35% at 100% 0%, rgba(0, 255, 163, 0.04), transparent);
   }
 
   #root {
     @apply min-h-full;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply rounded-xl border border-aegis-border bg-aegis-surface/90 shadow-glass backdrop-blur-glass;
+  }
+
+  .panel-sidebar {
+    @apply border-r border-aegis-border bg-aegis-surface;
+  }
+
+  .text-gradient-aegis {
+    @apply bg-gradient-to-r from-aegis-mint to-aegis-mint-dim bg-clip-text text-transparent;
+  }
+
+  .nav-active {
+    @apply bg-aegis-mint/10 text-aegis-mint shadow-glow;
   }
 }
