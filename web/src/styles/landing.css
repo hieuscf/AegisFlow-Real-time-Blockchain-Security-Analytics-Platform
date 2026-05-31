@@ -1,0 +1,122 @@
+/* Landing page utilities — scoped styles for marketing pages */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.landing-page {
+  background-color: #050816;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+.landing-page ::-webkit-scrollbar { width: 5px; }
+.landing-page ::-webkit-scrollbar-track { background: #050816; }
+.landing-page ::-webkit-scrollbar-thumb { background: #1A2840; border-radius: 3px; }
+.landing-page ::-webkit-scrollbar-thumb:hover { background: rgba(0, 229, 255, 0.3); }
+
+.landing-page ::selection {
+  background: rgba(0, 229, 255, 0.2);
+  color: #00E5FF;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(26, 40, 64, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 40, 64, 0.4) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.glass {
+  background: rgba(13, 26, 46, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(26, 40, 64, 0.8);
+}
+
+.glass-light {
+  background: rgba(11, 17, 32, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(26, 40, 64, 0.6);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #00E5FF 0%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, #ffffff 30%, #94A3B8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #00FF85 0%, #00E5FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-primary { box-shadow: 0 0 30px rgba(0, 229, 255, 0.25), 0 0 60px rgba(0, 229, 255, 0.08); }
+.glow-secondary { box-shadow: 0 0 30px rgba(124, 58, 237, 0.25), 0 0 60px rgba(124, 58, 237, 0.08); }
+.glow-success { box-shadow: 0 0 20px rgba(0, 255, 133, 0.3); }
+.glow-danger { box-shadow: 0 0 20px rgba(255, 77, 109, 0.3); }
+
+.card-gradient-border {
+  position: relative;
+  background: rgba(13, 26, 46, 0.7);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+}
+
+.card-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.3), rgba(124, 58, 237, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes livePing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 133, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(0, 255, 133, 0); }
+}
+
+.live-dot { animation: livePing 2s ease-out infinite; }
+
+@keyframes nodePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+.node-pulse { animation: nodePulse 2s ease-in-out infinite; }
+
+@keyframes flowDash {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.flow-dash { animation: flowDash 1s linear infinite; }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.shimmer-line {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
