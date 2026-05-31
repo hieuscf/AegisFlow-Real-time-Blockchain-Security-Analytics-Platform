@@ -47,6 +47,16 @@ Open [http://localhost:5173](http://localhost:5173).
 |----------|-------------|
 | `VITE_API_BASE_URL` | Analytics API base URL (default `http://localhost:8080`) |
 | `VITE_WS_URL` | WebSocket endpoint (default `ws://localhost:8080`) |
+| `VITE_WALLETCONNECT_PROJECT_ID` | [WalletConnect Cloud](https://cloud.walletconnect.com) project ID (required for WalletConnect) |
+
+## Web3 authentication (SIWE)
+
+1. **Connect Wallet** — RainbowKit modal (MetaMask, WalletConnect)
+2. **Sign In** — `GET /api/auth/nonce?address=…` → sign message → `POST /api/auth/verify`
+3. **JWT** — stored in `localStorage` (`aegisflow_jwt`) and Zustand `useAuthStore`
+4. **Logout** — clears JWT, auth store, and disconnects wallet
+
+Wallet feature path: `src/features/wallet/` (components, hooks, services, types).
 
 ## Shadcn/UI setup
 

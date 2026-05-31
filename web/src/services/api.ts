@@ -1,8 +1,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { clearAuthToken, getAuthToken } from '@/lib/auth';
+import { getAuthToken } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 import type {
   AlertsResponse,
   ApiErrorBody,
+  AuthNonceResponse,
   AuthVerifyPayload,
   AuthVerifyResponse,
   HealthResponse,
@@ -31,7 +33,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorBody>) => {
     if (error.response?.status === 401) {
-      clearAuthToken();
+      useAuthStore.getState().logout();
     }
     return Promise.reject(error);
   },
@@ -39,6 +41,11 @@ apiClient.interceptors.response.use(
 
 export const api = {
   getHealth: () => apiClient.get<HealthResponse>('/health').then((r) => r.data),
+
+  getAuthNonce: (address: string) =>
+    apiClient
+      .get<AuthNonceResponse>('/api/auth/nonce', { params: { address } })
+      .then((r) => r.data),
 
   verifySiwe: (payload: AuthVerifyPayload) =>
     apiClient

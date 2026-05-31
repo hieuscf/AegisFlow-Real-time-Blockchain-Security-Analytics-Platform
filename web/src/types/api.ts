@@ -12,8 +12,15 @@ export interface AuthVerifyPayload {
   signature: string;
 }
 
+export interface AuthNonceResponse {
+  nonce: string;
+  message: string;
+  address: string;
+}
+
 export interface AuthVerifyResponse {
   token: string;
+  address: string;
 }
 
 export interface AlertsResponse {
