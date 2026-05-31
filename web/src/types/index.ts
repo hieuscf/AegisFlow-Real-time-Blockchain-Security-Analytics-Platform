@@ -1,4 +1,5 @@
 export type { AlertLevel, SecurityAlert, AlertFeedMeta } from './alert';
+export type { PriceUpdatePayload, SwapEvent, CandlePoint, TokenPriceUpdate } from './blockchain';
 export type {
   ApiErrorBody,
   HealthResponse,

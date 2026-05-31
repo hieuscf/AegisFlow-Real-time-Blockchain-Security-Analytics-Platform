@@ -1,12 +1,31 @@
+import { io, type Socket } from 'socket.io-client';
+
 import { useWebSocketStore } from '@/store/websocketStore';
 import type { SecurityAlert } from '@/types/alert';
+import type { PriceUpdatePayload } from '@/types/blockchain';
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8080';
+/** Must match `SECURITY_FEED_ROOM` in services/analytics. */
+export const SECURITY_FEED_ROOM = 'security-feed';
+
+const DEFAULT_SOCKET_URL = 'http://localhost:8080';
 
 type MessageHandler = (data: unknown) => void;
 
-let socket: WebSocket | null = null;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let socket: Socket | null = null;
+
+function resolveSocketUrl(raw: string | undefined): string {
+  const fallback =
+    import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_SOCKET_URL;
+  const url = (raw?.trim() || fallback).replace(/\/$/, '');
+
+  if (url.startsWith('ws://')) {
+    return `http://${url.slice(5)}`;
+  }
+  if (url.startsWith('wss://')) {
+    return `https://${url.slice(6)}`;
+  }
+  return url;
+}
 
 function parseAlert(payload: unknown): SecurityAlert | null {
   if (!payload || typeof payload !== 'object') return null;
@@ -36,70 +55,118 @@ function parseAlert(payload: unknown): SecurityAlert | null {
   };
 }
 
-function scheduleReconnect(connect: () => void): void {
-  if (reconnectTimer) return;
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    connect();
-  }, 3000);
+function parsePriceUpdate(payload: unknown): PriceUpdatePayload | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const record = payload as Record<string, unknown>;
+  if (record.type !== 'PRICE_UPDATE') return null;
+  if (typeof record.tokenAddress !== 'string' || typeof record.timestamp !== 'string') {
+    return null;
+  }
+  const price = record.price;
+  const movingAverage = record.movingAverage;
+  if (typeof price !== 'number' || typeof movingAverage !== 'number') return null;
+
+  return {
+    type: 'PRICE_UPDATE',
+    tokenAddress: record.tokenAddress,
+    price,
+    movingAverage,
+    pairAddress: typeof record.pairAddress === 'string' ? record.pairAddress : undefined,
+    txHash: typeof record.txHash === 'string' ? record.txHash : undefined,
+    timestamp: record.timestamp,
+  };
+}
+
+function handleAlert(payload: unknown, onMessage?: MessageHandler): void {
+  onMessage?.(payload);
+  const alert = parseAlert(payload);
+  if (alert) {
+    useWebSocketStore.getState().pushAlert(alert);
+  }
+}
+
+function handlePriceUpdate(payload: unknown, onMessage?: MessageHandler): void {
+  onMessage?.(payload);
+  const update = parsePriceUpdate(payload);
+  if (update) {
+    useWebSocketStore.getState().pushPriceUpdate(update);
+  }
+}
+
+function bindSocketHandlers(activeSocket: Socket, onMessage?: MessageHandler): void {
+  activeSocket.on('connect', () => {
+    useWebSocketStore.getState().markConnected();
+  });
+
+  activeSocket.on('disconnect', () => {
+    useWebSocketStore.getState().markDisconnected();
+  });
+
+  activeSocket.on('connect_error', (err) => {
+    useWebSocketStore.getState().setError(err.message || 'Socket.IO connection error');
+  });
+
+  activeSocket.on('alert', (payload: unknown) => {
+    handleAlert(payload, onMessage);
+  });
+
+  activeSocket.on('security-alert', (payload: unknown) => {
+    handleAlert(payload, onMessage);
+  });
+
+  activeSocket.on('price-update', (payload: unknown) => {
+    handlePriceUpdate(payload, onMessage);
+  });
 }
 
 export function connectWebSocket(onMessage?: MessageHandler): () => void {
   const store = useWebSocketStore.getState();
 
-  if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
+  if (socket?.connected) {
+    return disconnectWebSocket;
+  }
+
+  if (socket) {
+    socket.connect();
     return disconnectWebSocket;
   }
 
   store.setStatus('connecting');
 
-  socket = new WebSocket(WS_URL);
+  const url = resolveSocketUrl(import.meta.env.VITE_WS_URL);
 
-  socket.onopen = () => {
-    useWebSocketStore.getState().markConnected();
-  };
+  socket = io(url, {
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
+    query: { room: SECURITY_FEED_ROOM },
+    reconnection: true,
+    reconnectionDelay: 3000,
+    autoConnect: true,
+  });
 
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data as string) as unknown;
-      onMessage?.(data);
-      const alert = parseAlert(data);
-      if (alert) {
-        useWebSocketStore.getState().pushAlert(alert);
-      }
-    } catch {
-      useWebSocketStore.getState().setError('Failed to parse WebSocket message');
-    }
-  };
-
-  socket.onerror = () => {
-    useWebSocketStore.getState().setError('WebSocket connection error');
-  };
-
-  socket.onclose = () => {
-    useWebSocketStore.getState().markDisconnected();
-    socket = null;
-    scheduleReconnect(() => connectWebSocket(onMessage));
-  };
+  bindSocketHandlers(socket, onMessage);
 
   return disconnectWebSocket;
 }
 
 export function disconnectWebSocket(): void {
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
+  if (!socket) {
+    useWebSocketStore.getState().markDisconnected();
+    return;
   }
-  if (socket) {
-    socket.onclose = null;
-    socket.close();
-    socket = null;
-  }
+
+  socket.removeAllListeners();
+  socket.disconnect();
+  socket = null;
   useWebSocketStore.getState().markDisconnected();
 }
 
-export function sendWebSocketMessage(payload: unknown): void {
-  if (socket?.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(payload));
+export function sendWebSocketMessage(event: string, payload?: unknown): void {
+  if (socket?.connected) {
+    socket.emit(event, payload);
   }
+}
+
+export function getSocket(): Socket | null {
+  return socket;
 }

@@ -46,7 +46,7 @@ Open [http://localhost:5173](http://localhost:5173).
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_BASE_URL` | Analytics API base URL (default `http://localhost:8080`) |
-| `VITE_WS_URL` | WebSocket endpoint (default `ws://localhost:8080`) |
+| `VITE_WS_URL` | Analytics Socket.IO URL (default `http://localhost:8080`, `ws://` auto-converted) |
 | `VITE_WALLETCONNECT_PROJECT_ID` | [WalletConnect Cloud](https://cloud.walletconnect.com) project ID (required for WalletConnect) |
 
 ## Web3 authentication (SIWE)

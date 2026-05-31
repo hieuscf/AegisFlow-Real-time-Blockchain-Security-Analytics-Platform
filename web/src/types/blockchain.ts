@@ -12,6 +12,17 @@ export interface SwapEvent {
   timestamp: number;
 }
 
+/** Matches analytics `PriceUpdatePayload` from Socket.IO `price-update` events. */
+export interface PriceUpdatePayload {
+  type: 'PRICE_UPDATE';
+  tokenAddress: string;
+  price: number;
+  movingAverage: number;
+  pairAddress?: string;
+  txHash?: string;
+  timestamp: string;
+}
+
 export interface TokenPriceUpdate {
   tokenAddress: string;
   symbol?: string;
