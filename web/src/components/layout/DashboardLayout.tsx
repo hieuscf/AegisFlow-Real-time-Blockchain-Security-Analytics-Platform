@@ -1,17 +1,15 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 import { Header } from './Header';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  className?: string;
 }
 
-export function DashboardLayout({ children, className }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col">
       <Header />
-      <main className={cn('flex min-h-0 flex-1 flex-col', className)}>{children}</main>
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
