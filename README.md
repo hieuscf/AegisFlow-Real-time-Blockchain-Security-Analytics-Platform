@@ -53,7 +53,7 @@ pnpm infra:up
 | PostgreSQL | `localhost:5432` |
 | Redis | `localhost:6379` |
 | Kafka | `localhost:9092` |
-| Kafka UI | http://localhost:8080 |
+| Kafka UI | http://localhost:8089 |
 
 ### 2. Environment
 

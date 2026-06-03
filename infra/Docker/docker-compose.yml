@@ -16,7 +16,7 @@ name: aegisflow
 #   docker compose logs kafka-init  # Topic bootstrap logs
 #
 # Admin UIs (after stack is up):
-#   Kafka UI  → http://localhost:8080
+#   Kafka UI  → http://localhost:8089  (override via KAFKA_UI_PORT in .env)
 #   pgAdmin   → http://localhost:5050
 #
 # Verify Kafka topics were created:
@@ -140,7 +140,7 @@ services:
       kafka:
         condition: service_healthy
     ports:
-      - "${KAFKA_UI_PORT:-8080}:8080"
+      - "${KAFKA_UI_PORT:-8089}:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: aegisflow-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_INTERNAL_BOOTSTRAP:-kafka:29092}
