@@ -1,15 +1,14 @@
 import { Routes, Route } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { DashboardPage } from '@/app/DashboardPage';
-import { LandingPage } from '@/features/landing';
-import { Web3Provider } from '@/providers/Web3Provider';
+import { AppLayout }      from '@/components/layout/AppLayout';
+import { DashboardPage }  from '@/app/DashboardPage';
+import { AnalyticsPage }  from '@/app/AnalyticsPage';
+import { LandingPage }    from '@/features/landing';
+import { Web3Provider }   from '@/providers/Web3Provider';
 
-function DashboardRoute() {
+function AppRoute({ children }: { children: React.ReactNode }) {
   return (
     <Web3Provider>
-      <AppLayout>
-        <DashboardPage />
-      </AppLayout>
+      <AppLayout>{children}</AppLayout>
     </Web3Provider>
   );
 }
@@ -17,8 +16,9 @@ function DashboardRoute() {
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/dashboard" element={<DashboardRoute />} />
+      <Route path="/"          element={<LandingPage />} />
+      <Route path="/dashboard" element={<AppRoute><DashboardPage /></AppRoute>} />
+      <Route path="/analytics" element={<AppRoute><AnalyticsPage /></AppRoute>} />
     </Routes>
   );
 }

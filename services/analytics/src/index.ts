@@ -47,8 +47,17 @@ async function logStartup(): Promise<void> {
   httpServer = httpApp.server;
 
   await connectRedis();
-  await connectPostgres();
-  await initSchema();
+
+  // Postgres is optional for local dev — WebSocket + Kafka still run without it.
+  try {
+    await connectPostgres();
+    await initSchema();
+    console.log("[analytics-core] Postgres connected");
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(`[analytics-core] Postgres unavailable (${msg}) — alerts will not be persisted`);
+  }
+
   await startHttpServer(httpServer);
   await startKafkaConsumer();
 

@@ -83,11 +83,22 @@ export async function runTokenAnalytics(
     return;
   }
 
-  await saveAlert(alert);
+  try {
+    await saveAlert(alert);
+  } catch (dbErr) {
+    const dbMsg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+    console.warn(`${LOG_PREFIX} saveAlert skipped (postgres unavailable): ${dbMsg}`);
+  }
   await publishSecurityAlert(alert);
 
   const audit = await runContractAudit(tokenAddress);
-  const auditId = await saveAuditResult(audit);
+  let auditId = "n/a";
+  try {
+    auditId = await saveAuditResult(audit);
+  } catch (dbErr) {
+    const dbMsg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+    console.warn(`${LOG_PREFIX} saveAuditResult skipped (postgres unavailable): ${dbMsg}`);
+  }
 
   const auditAlert = await createAlert({
     level: audit.success ? "WARNING" : "INFO",
