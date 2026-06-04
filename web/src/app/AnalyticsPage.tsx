@@ -5,9 +5,7 @@ import {
   Zap, BarChart3, AlertTriangle, Layers,
 } from 'lucide-react';
 
-import { DashboardLayout }        from '@/components/layout/DashboardLayout';
 import { RealtimeChart }           from '@/features/charts/RealtimeChart';
-import { useWebSocketConnection }  from '@/hooks';
 import { useWebSocketStore }       from '@/store';
 import type { SecurityAlert }      from '@/types/alert';
 import type { PriceUpdatePayload } from '@/types/blockchain';
@@ -521,14 +519,11 @@ function AnalyticsHeader() {
 /* ─────────────────────────────────────────────────────────────── Page */
 
 export function AnalyticsPage() {
-  useWebSocketConnection();
-
   const priceUpdates = useWebSocketStore((s) => s.priceUpdates);
   const tokenStats   = useMemo(() => buildTokenStats(priceUpdates), [priceUpdates]);
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col gap-6 px-5 pb-8 pt-4">
+    <div className="flex flex-col gap-6 px-5 pb-8 pt-4">
 
         <AnalyticsHeader />
 
@@ -546,7 +541,6 @@ export function AnalyticsPage() {
           <MaDeviationPanel stats={tokenStats} />
         </div>
 
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

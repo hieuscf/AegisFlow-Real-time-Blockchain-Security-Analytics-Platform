@@ -1,17 +1,12 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { WelcomeBar }      from '@/features/dashboard/WelcomeBar';
 import { KpiCards }        from '@/features/dashboard/KpiCards';
 import { AnalyticsGrid }   from '@/features/dashboard/AnalyticsGrid';
 import { RealtimeChart }   from '@/features/charts/RealtimeChart';
 import { SecurityFeed }    from '@/features/alerts/SecurityFeed';
-import { useWebSocketConnection } from '@/hooks';
 
 export function DashboardPage() {
-  useWebSocketConnection();
-
   return (
-    <DashboardLayout>
-      <div className="flex flex-col gap-6 px-5 pb-8 pt-2">
+    <div className="flex flex-col gap-6 px-5 pb-8 pt-2">
 
         {/* Welcome + threat level */}
         <WelcomeBar />
@@ -28,7 +23,6 @@ export function DashboardPage() {
         {/* Analytics grid */}
         <AnalyticsGrid />
 
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

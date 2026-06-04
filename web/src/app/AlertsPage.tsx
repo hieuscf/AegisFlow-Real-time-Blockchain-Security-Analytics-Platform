@@ -2,15 +2,12 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, RefreshCw, ShieldAlert } from 'lucide-react';
 
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { SecurityFeed } from '@/features/alerts/SecurityFeed';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useWebSocketConnection } from '@/hooks/useWebSocketConnection';
 import { cn } from '@/lib/utils';
 import { useWebSocketStore } from '@/store';
 
 export function AlertsPage() {
-  useWebSocketConnection();
 
   const wsStatus = useWebSocketStore((s) => s.status);
   const setAlerts = useWebSocketStore((s) => s.setAlerts);
@@ -30,8 +27,7 @@ export function AlertsPage() {
   const info = stats?.byLevel.INFO ?? 0;
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col gap-6 px-5 pb-8 pt-4">
+    <div className="flex flex-col gap-6 px-5 pb-8 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Bell className="h-6 w-6 text-aegis-danger" />
@@ -91,7 +87,6 @@ export function AlertsPage() {
         <div style={{ minHeight: '520px' }}>
           <SecurityFeed />
         </div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

@@ -12,6 +12,7 @@ const DEFAULT_SOCKET_URL = 'http://localhost:8080';
 type MessageHandler = (data: unknown) => void;
 
 let socket: Socket | null = null;
+let connectionRefCount = 0;
 
 function resolveSocketUrl(raw: string | undefined): string {
   const fallback =
@@ -119,37 +120,12 @@ function bindSocketHandlers(activeSocket: Socket, onMessage?: MessageHandler): v
   });
 }
 
-export function connectWebSocket(onMessage?: MessageHandler): () => void {
-  const store = useWebSocketStore.getState();
-
-  if (socket?.connected) {
-    return disconnectWebSocket;
+function releaseWebSocketConnection(): void {
+  connectionRefCount = Math.max(0, connectionRefCount - 1);
+  if (connectionRefCount > 0) {
+    return;
   }
 
-  if (socket) {
-    socket.connect();
-    return disconnectWebSocket;
-  }
-
-  store.setStatus('connecting');
-
-  const url = resolveSocketUrl(import.meta.env.VITE_WS_URL);
-
-  socket = io(url, {
-    path: '/socket.io',
-    transports: ['websocket', 'polling'],
-    query: { room: SECURITY_FEED_ROOM },
-    reconnection: true,
-    reconnectionDelay: 3000,
-    autoConnect: true,
-  });
-
-  bindSocketHandlers(socket, onMessage);
-
-  return disconnectWebSocket;
-}
-
-export function disconnectWebSocket(): void {
   if (!socket) {
     useWebSocketStore.getState().markDisconnected();
     return;
@@ -159,6 +135,44 @@ export function disconnectWebSocket(): void {
   socket.disconnect();
   socket = null;
   useWebSocketStore.getState().markDisconnected();
+}
+
+export function connectWebSocket(onMessage?: MessageHandler): () => void {
+  const store = useWebSocketStore.getState();
+  connectionRefCount += 1;
+
+  if (socket?.connected) {
+    return releaseWebSocketConnection;
+  }
+
+  if (socket) {
+    socket.connect();
+    return releaseWebSocketConnection;
+  }
+
+  store.setStatus('connecting');
+
+  const url = resolveSocketUrl(import.meta.env.VITE_WS_URL);
+
+  socket = io(url, {
+    path: '/socket.io',
+    transports: ['websocket'],
+    query: { room: SECURITY_FEED_ROOM },
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 3000,
+    autoConnect: true,
+  });
+
+  bindSocketHandlers(socket, onMessage);
+
+  return releaseWebSocketConnection;
+}
+
+/** @deprecated Prefer connectWebSocket cleanup; kept for explicit teardown */
+export function disconnectWebSocket(): void {
+  connectionRefCount = 0;
+  releaseWebSocketConnection();
 }
 
 export function sendWebSocketMessage(event: string, payload?: unknown): void {

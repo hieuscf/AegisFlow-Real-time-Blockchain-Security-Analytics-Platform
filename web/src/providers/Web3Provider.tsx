@@ -2,7 +2,7 @@ import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { wagmiConfig } from '@/config/wagmi';
 import { AuthSessionGuard } from '@/features/wallet/components/AuthSessionGuard';
@@ -30,24 +30,17 @@ interface Web3ProviderProps {
 }
 
 export function Web3Provider({ children }: Web3ProviderProps) {
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
-    useAuthStore.persist.rehydrate();
+    void useAuthStore.persist.rehydrate();
   }, []);
 
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={aegisRainbowTheme} modalSize="compact">
-          {mounted ? (
-            <>
-              <WalletStateSync />
-              <AuthSessionGuard />
-              {children}
-            </>
-          ) : null}
+          <WalletStateSync />
+          <AuthSessionGuard />
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

@@ -1,26 +1,28 @@
-import { Routes, Route } from 'react-router-dom';
-import { AppLayout }      from '@/components/layout/AppLayout';
-import { DashboardPage }  from '@/app/DashboardPage';
-import { AnalyticsPage }  from '@/app/AnalyticsPage';
-import { AlertsPage }       from '@/app/AlertsPage';
-import { LandingPage }    from '@/features/landing';
-import { Web3Provider }   from '@/providers/Web3Provider';
+import { lazy } from 'react';
+import { Route, Routes } from 'react-router-dom';
 
-function AppRoute({ children }: { children: React.ReactNode }) {
-  return (
-    <Web3Provider>
-      <AppLayout>{children}</AppLayout>
-    </Web3Provider>
-  );
-}
+import { AppShell } from '@/components/layout/AppShell';
+import { LandingPage } from '@/features/landing';
+
+const DashboardPage = lazy(() =>
+  import('@/app/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const AnalyticsPage = lazy(() =>
+  import('@/app/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+);
+const AlertsPage = lazy(() =>
+  import('@/app/AlertsPage').then((m) => ({ default: m.AlertsPage })),
+);
 
 export function App() {
   return (
     <Routes>
-      <Route path="/"          element={<LandingPage />} />
-      <Route path="/dashboard" element={<AppRoute><DashboardPage /></AppRoute>} />
-      <Route path="/analytics" element={<AppRoute><AnalyticsPage /></AppRoute>} />
-      <Route path="/alerts"     element={<AppRoute><AlertsPage /></AppRoute>} />
+      <Route path="/" element={<LandingPage />} />
+      <Route element={<AppShell />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/alerts" element={<AlertsPage />} />
+      </Route>
     </Routes>
   );
 }
