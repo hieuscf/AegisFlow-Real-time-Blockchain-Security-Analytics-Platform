@@ -3,7 +3,7 @@ import { Router, type Request, type Response } from "express";
 import { buildSiweMessage, verifySiweSignature } from "../auth/siwe";
 import { signSessionToken } from "../auth/jwt";
 import { issueNonce } from "../auth/nonce";
-import { listAlerts } from "../database/repository";
+import { createNotificationsRouter } from "./routes/notifications";
 
 function asyncHandler(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -19,6 +19,8 @@ function asyncHandler(
 
 export function createApiRouter(): Router {
   const router = Router();
+
+  router.use(createNotificationsRouter());
 
   router.get("/health", (_req, res) => {
     res.json({ status: "ok", service: "analytics-core" });
@@ -55,14 +57,6 @@ export function createApiRouter(): Router {
       const token = signSessionToken(address);
 
       res.json({ token, address });
-    }),
-  );
-
-  router.get(
-    "/api/alerts",
-    asyncHandler(async (_req, res) => {
-      const data = await listAlerts(100);
-      res.json({ data });
     }),
   );
 

@@ -23,6 +23,13 @@ export interface AuthVerifyResponse {
   address: string;
 }
 
+/** @deprecated Use NotificationListResponse from @/types/notification */
 export interface AlertsResponse {
   data: unknown[];
+  meta?: {
+    total: number;
+    limit: number;
+    offset: number;
+    source: string;
+  };
 }

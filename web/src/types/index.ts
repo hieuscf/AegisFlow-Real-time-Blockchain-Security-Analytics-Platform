@@ -1,4 +1,11 @@
 export type { AlertLevel, SecurityAlert, AlertFeedMeta } from './alert';
+export type {
+  NotificationSource,
+  NotificationListParams,
+  NotificationListResponse,
+  NotificationStatsResponse,
+  NotificationDetailResponse,
+} from './notification';
 export type { PriceUpdatePayload, SwapEvent, CandlePoint, TokenPriceUpdate } from './blockchain';
 export type {
   ApiErrorBody,

@@ -1,4 +1,6 @@
 import { registerAlertHandler } from "./alerts/engine";
+import { setPostgresAvailable } from "./database/availability";
+import { pushNotification } from "./notifications/store";
 import {
   createHttpApplication,
   startHttpServer,
@@ -20,8 +22,9 @@ const SHUTDOWN_TIMEOUT_MS = 20_000;
 let isShuttingDown = false;
 let httpServer: ReturnType<typeof createHttpApplication>["server"] | null = null;
 
-function registerAlertBroadcast(): void {
+function registerAlertHandlers(): void {
   registerAlertHandler(async (alert) => {
+    pushNotification(alert);
     broadcastAlert(alert);
   });
 }
@@ -41,7 +44,7 @@ async function logStartup(): Promise<void> {
   console.log(`[analytics-core] Postgres configured`);
   console.log(`[analytics-core] HTTP port=${config.port}`);
 
-  registerAlertBroadcast();
+  registerAlertHandlers();
 
   const httpApp = createHttpApplication();
   httpServer = httpApp.server;
@@ -52,8 +55,10 @@ async function logStartup(): Promise<void> {
   try {
     await connectPostgres();
     await initSchema();
+    setPostgresAvailable(true);
     console.log("[analytics-core] Postgres connected");
   } catch (error) {
+    setPostgresAvailable(false);
     const msg = error instanceof Error ? error.message : String(error);
     console.warn(`[analytics-core] Postgres unavailable (${msg}) — alerts will not be persisted`);
   }

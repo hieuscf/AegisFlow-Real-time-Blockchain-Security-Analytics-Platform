@@ -9,6 +9,12 @@ import type {
   AuthVerifyResponse,
   HealthResponse,
 } from '@/types/api';
+import type {
+  NotificationDetailResponse,
+  NotificationListParams,
+  NotificationListResponse,
+  NotificationStatsResponse,
+} from '@/types/notification';
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
@@ -52,5 +58,21 @@ export const api = {
       .post<AuthVerifyResponse>('/api/auth/verify', payload)
       .then((r) => r.data),
 
+  /** @deprecated Use getNotifications */
   getAlerts: () => apiClient.get<AlertsResponse>('/api/alerts').then((r) => r.data),
+
+  getNotifications: (params?: NotificationListParams) =>
+    apiClient
+      .get<NotificationListResponse>('/api/notifications', { params })
+      .then((r) => r.data),
+
+  getNotificationStats: () =>
+    apiClient
+      .get<NotificationStatsResponse>('/api/notifications/stats')
+      .then((r) => r.data),
+
+  getNotification: (id: string) =>
+    apiClient
+      .get<NotificationDetailResponse>(`/api/notifications/${id}`)
+      .then((r) => r.data),
 };
