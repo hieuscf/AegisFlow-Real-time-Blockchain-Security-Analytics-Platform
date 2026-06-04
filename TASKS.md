@@ -256,23 +256,23 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 
 ## 6.1 Mock data generator
 
-- [ ] Tạo `scripts/mock-data.js`
-- [ ] Publish fake swaps bằng kafkajs
+- [x] `services/analytics/scripts/mock-data.ts` + `npm run mock-data`
+- [x] Publish fake swaps bằng kafkajs (`src/mock/kafkaProducer.ts`)
 
 ## 6.2 Fake market simulation
 
-- [ ] Gửi fake swaps liên tục
-- [ ] Mỗi ~15s: inject crash event (giảm giá ~90%)
+- [x] Gửi fake swaps liên tục (`src/mock/simulator.ts`, random walk ±1–3%)
+- [x] Mỗi 15s: inject crash event (giữ 5–20% giá → drop 80–95%, kích hoạt anomaly detector)
 
 ## 6.3 E2E pipeline validation
 
 ### Startup flow (manual)
 
 - [ ] `docker compose up` trong `infra/Docker/`
-- [ ] Chạy Go indexer
-- [ ] Chạy `services/analytics`
+- [ ] Chạy Go indexer (optional khi dùng mock)
+- [ ] Chạy `services/analytics` (`npm run dev`)
 - [ ] Chạy `web` (`npm run dev`)
-- [ ] Chạy `mock-data.js`
+- [ ] Chạy `npm run mock-data` trong `services/analytics`
 
 ### Acceptance criteria
 
@@ -317,7 +317,7 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 | SIWE authentication | [x] |
 | Realtime WebSocket alerts | [x] |
 | Trading dashboard | [x] |
-| E2E realtime pipeline | [ ] Thiếu mock script + checklist đã pass |
+| E2E realtime pipeline | [~] Mock script có; checklist manual chưa pass |
 | Dockerized services | [~] Chỉ infra; chưa Dockerfile app |
 
 ---
