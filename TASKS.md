@@ -297,11 +297,11 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 # 8. Production Readiness (optional)
 
 - [x] Structured logging (Pino) — `src/logging/logger.ts`, `LOG_LEVEL` env, JSON prod / pretty dev
-- [x] Health check — `GET /health` (`services/analytics/src/app/routes.ts`)
+- [x] Health check — `GET /health`, readiness `GET /health/ready` (`src/app/routes/health.ts`)
 - [x] Graceful shutdown — Kafka consumer, Redis, Postgres, HTTP (`index.ts`, `consumer.ts`)
-- [ ] Basic rate limiting
-- [x] Environment validation — `REQUIRED_KEYS` trong `config/env.ts` (một phần)
-- [ ] Error middleware tập trung (Express)
+- [x] Basic rate limiting — `express-rate-limit` global + auth (`src/app/middleware/rateLimit.ts`)
+- [x] Environment validation — `REQUIRED_KEYS`, `JWT_SECRET` min 32, `LOG_LEVEL` enum (`config/env.ts`)
+- [x] Error middleware tập trung — `HttpError`, `errorHandler`, `asyncHandler` (`src/app/middleware/`)
 - [x] Retry strategies — Kafka publish (indexer), consumer reconnect (analytics)
 
 ---

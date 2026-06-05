@@ -1,5 +1,6 @@
 import { verifyMessage } from "ethers";
 
+import { BadRequestError, UnauthorizedError } from "../app/errors";
 import { loadConfig } from "../config/env";
 import { consumeNonce } from "./nonce";
 
@@ -39,17 +40,17 @@ export async function verifySiweSignature(
   const nonce = extractNonceFromMessage(message);
 
   if (!address || !nonce) {
-    throw new Error("Invalid SIWE message format");
+    throw new BadRequestError("Invalid SIWE message format");
   }
 
   const nonceValid = await consumeNonce(address, nonce);
   if (!nonceValid) {
-    throw new Error("Invalid or expired nonce");
+    throw new UnauthorizedError("Invalid or expired nonce");
   }
 
   const recovered = verifyMessage(message, signature);
   if (recovered.toLowerCase() !== address.toLowerCase()) {
-    throw new Error("Signature verification failed");
+    throw new UnauthorizedError("Signature verification failed");
   }
 
   return { address: recovered };

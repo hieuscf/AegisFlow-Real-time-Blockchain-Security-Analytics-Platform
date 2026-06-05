@@ -38,6 +38,11 @@ export interface AppConfig {
   alerts: {
     dedupeTtlSeconds: number;
   };
+  rateLimit: {
+    global: { windowMs: number; max: number };
+    auth: { windowMs: number; max: number };
+  };
+  logLevel: string;
 }
 
 const REQUIRED_KEYS = [
@@ -92,6 +97,25 @@ function parseThreshold(raw: string, fallback: number): number {
   return parsed;
 }
 
+const LOG_LEVELS = ["trace", "debug", "info", "warn", "error", "fatal"] as const;
+
+function parseLogLevel(raw: string, fallback: string): string {
+  const normalized = raw.trim().toLowerCase();
+  if (LOG_LEVELS.includes(normalized as (typeof LOG_LEVELS)[number])) {
+    return normalized;
+  }
+  return fallback;
+}
+
+function validateJwtSecret(secret: string): void {
+  if (secret.length < 32) {
+    throw new Error(
+      "JWT_SECRET must be at least 32 characters. " +
+        "Use a long random string in .env.",
+    );
+  }
+}
+
 export function loadConfig(): AppConfig {
   for (const key of REQUIRED_KEYS) {
     if (!process.env[key]?.trim()) {
@@ -101,6 +125,9 @@ export function loadConfig(): AppConfig {
       );
     }
   }
+
+  const jwtSecret = requireEnv("JWT_SECRET");
+  validateJwtSecret(jwtSecret);
 
   return {
     port: parsePositiveInt(optionalEnv("PORT", "8080"), 8080),
@@ -120,7 +147,7 @@ export function loadConfig(): AppConfig {
       url: requireEnv("DATABASE_URL"),
     },
     jwt: {
-      secret: requireEnv("JWT_SECRET"),
+      secret: jwtSecret,
       expiresIn: optionalEnv("JWT_EXPIRES_IN", "24h"),
     },
     siwe: {
@@ -155,5 +182,25 @@ export function loadConfig(): AppConfig {
         60,
       ),
     },
+    rateLimit: {
+      global: {
+        windowMs: parsePositiveInt(
+          optionalEnv("RATE_LIMIT_WINDOW_MS", "900000"),
+          900_000,
+        ),
+        max: parsePositiveInt(optionalEnv("RATE_LIMIT_MAX", "100"), 100),
+      },
+      auth: {
+        windowMs: parsePositiveInt(
+          optionalEnv("RATE_LIMIT_AUTH_WINDOW_MS", "900000"),
+          900_000,
+        ),
+        max: parsePositiveInt(optionalEnv("RATE_LIMIT_AUTH_MAX", "20"), 20),
+      },
+    },
+    logLevel: parseLogLevel(
+      optionalEnv("LOG_LEVEL", process.env.NODE_ENV === "production" ? "info" : "debug"),
+      "info",
+    ),
   };
 }

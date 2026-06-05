@@ -4,10 +4,12 @@ import http from "node:http";
 
 import { loadConfig } from "../config/env";
 import { createLogger } from "../logging/logger";
+import { initWebSocket } from "../websocket/hub";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { createGlobalRateLimiter } from "./middleware/rateLimit";
+import { createApiRouter } from "./routes";
 
 const log = createLogger("http");
-import { initWebSocket } from "../websocket/hub";
-import { createApiRouter } from "./routes";
 
 export interface HttpApplication {
   app: express.Application;
@@ -16,15 +18,18 @@ export interface HttpApplication {
 
 export function createHttpApplication(): HttpApplication {
   const app = express();
+  const config = loadConfig();
 
   app.use(cors());
   app.use(express.json({ limit: "1mb" }));
+  app.use(createGlobalRateLimiter(config));
   app.use(createApiRouter());
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   const server = http.createServer(app);
   initWebSocket(server);
 
-  const config = loadConfig();
   log.info({ port: config.port }, "API + Socket.IO will listen");
 
   return { app, server };

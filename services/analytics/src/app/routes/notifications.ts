@@ -1,6 +1,7 @@
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
 
-import { createLogger, logError } from "../../logging/logger";
+import { BadRequestError, NotFoundError } from "../errors";
+import { asyncHandler } from "../middleware/asyncHandler";
 import {
   getNotification,
   getNotificationStats,
@@ -10,19 +11,6 @@ import {
   parseNotificationIdParam,
   parseNotificationListQuery,
 } from "../../notifications/query";
-
-const log = createLogger("api:notifications");
-
-function asyncHandler(
-  handler: (req: Request, res: Response) => Promise<void>,
-): (req: Request, res: Response) => void {
-  return (req, res) => {
-    void handler(req, res).catch((error: unknown) => {
-      logError(log, "Request failed", error);
-      res.status(500).json({ error: "Internal server error" });
-    });
-  };
-}
 
 export function createNotificationsRouter(): Router {
   const router = Router();
@@ -49,14 +37,12 @@ export function createNotificationsRouter(): Router {
     asyncHandler(async (req, res) => {
       const id = parseNotificationIdParam(req.params.id ?? "");
       if (!id) {
-        res.status(400).json({ error: "Invalid notification id" });
-        return;
+        throw new BadRequestError("Invalid notification id");
       }
 
       const result = await getNotification(id);
       if (!result) {
-        res.status(404).json({ error: "Notification not found" });
-        return;
+        throw new NotFoundError("Notification not found");
       }
 
       res.json({

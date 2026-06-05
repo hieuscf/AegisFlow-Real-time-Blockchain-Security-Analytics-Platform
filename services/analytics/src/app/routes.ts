@@ -1,40 +1,32 @@
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
 
 import { buildSiweMessage, verifySiweSignature } from "../auth/siwe";
 import { signSessionToken } from "../auth/jwt";
 import { issueNonce } from "../auth/nonce";
-import { logError, createLogger } from "../logging/logger";
+import { loadConfig } from "../config/env";
+import { BadRequestError } from "./errors";
+import { asyncHandler } from "./middleware/asyncHandler";
+import {
+  createAuthRateLimiter,
+} from "./middleware/rateLimit";
+import { createHealthRouter } from "./routes/health";
 import { createNotificationsRouter } from "./routes/notifications";
-
-const log = createLogger("api");
-
-function asyncHandler(
-  handler: (req: Request, res: Response) => Promise<void>,
-): (req: Request, res: Response) => void {
-  return (req, res) => {
-    void handler(req, res).catch((error: unknown) => {
-      logError(log, "Request failed", error);
-      res.status(500).json({ error: "Internal server error" });
-    });
-  };
-}
 
 export function createApiRouter(): Router {
   const router = Router();
+  const config = loadConfig();
+  const authLimiter = createAuthRateLimiter(config);
 
+  router.use(createHealthRouter());
   router.use(createNotificationsRouter());
-
-  router.get("/health", (_req, res) => {
-    res.json({ status: "ok", service: "analytics-core" });
-  });
 
   router.get(
     "/api/auth/nonce",
+    authLimiter,
     asyncHandler(async (req, res) => {
       const address = String(req.query.address ?? "").trim();
       if (!address) {
-        res.status(400).json({ error: "address query parameter is required" });
-        return;
+        throw new BadRequestError("address query parameter is required");
       }
 
       const nonce = await issueNonce(address);
@@ -46,13 +38,13 @@ export function createApiRouter(): Router {
 
   router.post(
     "/api/auth/verify",
+    authLimiter,
     asyncHandler(async (req, res) => {
       const message = String(req.body?.message ?? "").trim();
       const signature = String(req.body?.signature ?? "").trim();
 
       if (!message || !signature) {
-        res.status(400).json({ error: "message and signature are required" });
-        return;
+        throw new BadRequestError("message and signature are required");
       }
 
       const { address } = await verifySiweSignature(message, signature);
