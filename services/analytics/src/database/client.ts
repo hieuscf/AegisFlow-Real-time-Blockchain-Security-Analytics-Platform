@@ -1,8 +1,9 @@
 import { Pool } from "pg";
 
 import { loadConfig } from "../config/env";
+import { createLogger } from "../logging/logger";
 
-const LOG_PREFIX = "[postgres]";
+const log = createLogger("postgres");
 
 let pool: Pool | null = null;
 
@@ -15,7 +16,7 @@ export function getPool(): Pool {
     });
 
     pool.on("error", (error: Error) => {
-      console.error(`${LOG_PREFIX} Pool error:`, error.message);
+      log.error({ err: error.message }, "Pool error");
     });
   }
 
@@ -25,7 +26,7 @@ export function getPool(): Pool {
 export async function connectPostgres(): Promise<Pool> {
   const db = getPool();
   await db.query("SELECT 1");
-  console.log(`${LOG_PREFIX} Connected`);
+  log.info("Connected");
   return db;
 }
 
@@ -37,7 +38,7 @@ export async function disconnectPostgres(): Promise<void> {
   const instance = pool;
   pool = null;
   await instance.end();
-  console.log(`${LOG_PREFIX} Disconnected`);
+  log.info("Disconnected");
 }
 
 export async function initSchema(): Promise<void> {
@@ -78,5 +79,5 @@ export async function initSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_audit_results_created_at ON audit_results (created_at DESC);
   `);
 
-  console.log(`${LOG_PREFIX} Schema ready (alerts, audit_results)`);
+  log.info("Schema ready (alerts, audit_results)");
 }

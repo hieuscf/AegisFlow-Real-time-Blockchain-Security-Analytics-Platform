@@ -1,8 +1,9 @@
+import { createLogger, logError } from "../src/logging/logger";
 import { loadMockConfig } from "../src/mock/config";
 import { MockKafkaProducer } from "../src/mock/kafkaProducer";
 import { startSimulation } from "../src/mock/simulator";
 
-const LOG_PREFIX = "[MOCK]";
+const log = createLogger("mock");
 
 async function main(): Promise<void> {
   const config = loadMockConfig();
@@ -13,7 +14,7 @@ async function main(): Promise<void> {
   const simulator = startSimulation(config, producer);
 
   const shutdown = async (signal: string): Promise<void> => {
-    console.log(`${LOG_PREFIX} Received ${signal}, shutting down…`);
+    log.info({ signal }, "Shutting down");
     await simulator.stopSimulation();
     await producer.disconnect();
     process.exit(0);
@@ -29,7 +30,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`${LOG_PREFIX} Fatal error: ${message}`);
+  logError(log, "Fatal error", error);
   process.exit(1);
 });

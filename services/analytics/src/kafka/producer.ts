@@ -1,9 +1,10 @@
 import { Kafka, type Producer } from "kafkajs";
 
 import { loadConfig } from "../config/env";
+import { createLogger } from "../logging/logger";
 import type { SecurityAlert } from "../models/types";
 
-const LOG_PREFIX = "[kafka-producer]";
+const log = createLogger("kafka-producer");
 const CLIENT_ID = "aegisflow-analytics-producer";
 
 let producer: Producer | null = null;
@@ -22,7 +23,7 @@ async function getProducer(): Promise<Producer> {
 
   producer = kafka.producer();
   await producer.connect();
-  console.log(`${LOG_PREFIX} Connected`);
+  log.info("Connected");
   return producer;
 }
 
@@ -40,8 +41,9 @@ export async function publishSecurityAlert(alert: SecurityAlert): Promise<void> 
     ],
   });
 
-  console.log(
-    `${LOG_PREFIX} Published alert id=${alert.id} topic=${config.kafka.securityAlertsTopic}`,
+  log.info(
+    { alertId: alert.id, topic: config.kafka.securityAlertsTopic },
+    "Published alert",
   );
 }
 
@@ -53,5 +55,5 @@ export async function disconnectKafkaProducer(): Promise<void> {
   const instance = producer;
   producer = null;
   await instance.disconnect();
-  console.log(`${LOG_PREFIX} Disconnected`);
+  log.info("Disconnected");
 }

@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 
+import { createLogger, logError } from "../../logging/logger";
 import {
   getNotification,
   getNotificationStats,
@@ -10,13 +11,14 @@ import {
   parseNotificationListQuery,
 } from "../../notifications/query";
 
+const log = createLogger("api:notifications");
+
 function asyncHandler(
   handler: (req: Request, res: Response) => Promise<void>,
 ): (req: Request, res: Response) => void {
   return (req, res) => {
     void handler(req, res).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error("[api:notifications] Request failed:", message);
+      logError(log, "Request failed", error);
       res.status(500).json({ error: "Internal server error" });
     });
   };

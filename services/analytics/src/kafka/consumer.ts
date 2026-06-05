@@ -2,9 +2,10 @@ import { Kafka, type Consumer, type EachMessagePayload } from "kafkajs";
 
 import { processSwapAnalytics } from "../analytics/pipeline";
 import { loadConfig } from "../config/env";
+import { createLogger, logError } from "../logging/logger";
 import type { SwapEvent } from "../models/types";
 
-const LOG_PREFIX = "[kafka]";
+const log = createLogger("kafka");
 const CLIENT_ID = "aegisflow-analytics-core";
 
 let kafkaConsumer: SwapKafkaConsumer | null = null;
@@ -91,7 +92,7 @@ async function processSwapMessage(
   const raw = payload.message.value?.toString("utf8");
 
   if (!raw) {
-    console.warn(`${LOG_PREFIX} Skipping empty message`);
+    log.warn("Skipping empty message");
     return;
   }
 
@@ -99,20 +100,21 @@ async function processSwapMessage(
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch {
-    console.warn(`${LOG_PREFIX} Invalid JSON, skipping message`);
+    log.warn("Invalid JSON, skipping message");
     return;
   }
 
   const swap = validateSwapEvent(parsed);
   if (!swap) {
-    console.warn(`${LOG_PREFIX} Malformed SwapEvent, skipping message`);
+    log.warn("Malformed SwapEvent, skipping message");
     return;
   }
 
   await processSwapAnalytics(swap);
 
-  console.log(
-    `${LOG_PREFIX} Message processed tx=${swap.txHash} pair=${swap.pairAddress}`,
+  log.debug(
+    { txHash: swap.txHash, pairAddress: swap.pairAddress },
+    "Message processed",
   );
 }
 
@@ -142,16 +144,17 @@ class SwapKafkaConsumer {
     const config = loadConfig();
 
     this.consumer.on(this.consumer.events.CONNECT, () => {
-      console.log(`${LOG_PREFIX} Kafka connected`);
+      log.info("Kafka connected");
     });
 
     this.consumer.on(this.consumer.events.DISCONNECT, () => {
-      console.log(`${LOG_PREFIX} Kafka disconnected (client will retry)`);
+      log.warn("Kafka disconnected (client will retry)");
     });
 
     this.consumer.on(this.consumer.events.CRASH, (event) => {
-      console.error(
-        `${LOG_PREFIX} Consumer crash: ${event.payload.error.message}`,
+      log.error(
+        { err: event.payload.error.message },
+        "Consumer crash",
       );
     });
 
@@ -175,19 +178,17 @@ class SwapKafkaConsumer {
           try {
             await processSwapMessage(messagePayload);
           } catch (error) {
-            const message =
-              error instanceof Error ? error.message : String(error);
-            console.error(`${LOG_PREFIX} Message processing error: ${message}`);
+            logError(log, "Message processing error", error);
           }
         },
       })
       .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`${LOG_PREFIX} Consumer run loop failed: ${message}`);
+        logError(log, "Consumer run loop failed", error);
       });
 
-    console.log(
-      `${LOG_PREFIX} Consumer started group=${config.kafka.groupId} topic=${config.kafka.topic}`,
+    log.info(
+      { groupId: config.kafka.groupId, topic: config.kafka.topic },
+      "Consumer started",
     );
   }
 
@@ -197,16 +198,14 @@ class SwapKafkaConsumer {
     try {
       await this.consumer.stop();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.warn(`${LOG_PREFIX} Consumer stop warning: ${message}`);
+      logError(log, "Consumer stop warning", error);
     }
 
     try {
       await this.consumer.disconnect();
-      console.log(`${LOG_PREFIX} Kafka disconnected`);
+      log.info("Kafka disconnected");
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.warn(`${LOG_PREFIX} Consumer disconnect warning: ${message}`);
+      logError(log, "Consumer disconnect warning", error);
     }
   }
 }

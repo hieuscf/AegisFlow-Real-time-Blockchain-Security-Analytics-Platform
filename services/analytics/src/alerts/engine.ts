@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import { loadConfig } from "../config/env";
+import { createLogger, logError } from "../logging/logger";
 import type { AlertLevel, SecurityAlert } from "../models/types";
 
-const LOG_PREFIX = "[alerts]";
+const log = createLogger("alerts");
 
 type AlertHandler = (alert: SecurityAlert) => void | Promise<void>;
 
@@ -55,7 +56,10 @@ export async function createAlert(input: CreateAlertInput): Promise<SecurityAler
   const key = dedupeKey(input.level, input.type, input.tokenAddress);
 
   if (!input.skipDedupe && isDuplicate(key, config.alerts.dedupeTtlSeconds)) {
-    console.log(`${LOG_PREFIX} Deduped alert type=${input.type} token=${input.tokenAddress ?? "n/a"}`);
+    log.debug(
+      { type: input.type, tokenAddress: input.tokenAddress ?? "n/a" },
+      "Deduped alert",
+    );
     return null;
   }
 
@@ -73,8 +77,9 @@ export async function createAlert(input: CreateAlertInput): Promise<SecurityAler
     createdAt: new Date().toISOString(),
   };
 
-  console.log(
-    `${LOG_PREFIX} ${alert.level} type=${alert.type} title="${alert.title}"`,
+  log.info(
+    { level: alert.level, type: alert.type, title: alert.title, alertId: alert.id },
+    "Alert created",
   );
 
   await Promise.all(
@@ -82,8 +87,7 @@ export async function createAlert(input: CreateAlertInput): Promise<SecurityAler
       try {
         await handler(alert);
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`${LOG_PREFIX} Handler error: ${message}`);
+        logError(log, "Handler error", error);
       }
     }),
   );

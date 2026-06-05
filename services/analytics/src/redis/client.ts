@@ -1,8 +1,9 @@
 import Redis from "ioredis";
 
 import { loadConfig } from "../config/env";
+import { createLogger, logError } from "../logging/logger";
 
-const LOG_PREFIX = "[redis]";
+const log = createLogger("redis");
 const MAX_PRICE_HISTORY = 10;
 
 let redisClient: Redis | null = null;
@@ -14,23 +15,23 @@ function priceKey(tokenAddress: string): string {
 
 function attachEventHandlers(client: Redis): void {
   client.on("connect", () => {
-    console.log(`${LOG_PREFIX} Redis connected`);
+    log.info("Redis connected");
   });
 
   client.on("ready", () => {
-    console.log(`${LOG_PREFIX} Redis ready`);
+    log.info("Redis ready");
   });
 
   client.on("close", () => {
-    console.log(`${LOG_PREFIX} Redis disconnected`);
+    log.info("Redis disconnected");
   });
 
   client.on("reconnecting", (delayMs: number) => {
-    console.log(`${LOG_PREFIX} Redis reconnecting in ${delayMs}ms`);
+    log.warn({ delayMs }, "Redis reconnecting");
   });
 
   client.on("error", (error: Error) => {
-    console.error(`${LOG_PREFIX} Redis error:`, error.message);
+    log.error({ err: error.message }, "Redis error");
   });
 }
 
@@ -87,14 +88,12 @@ export async function pushTokenPrice(
   price: number,
 ): Promise<void> {
   if (!tokenAddress.trim()) {
-    console.warn(`${LOG_PREFIX} pushTokenPrice skipped: empty token address`);
+    log.warn("pushTokenPrice skipped: empty token address");
     return;
   }
 
   if (!Number.isFinite(price) || Number.isNaN(price) || price < 0) {
-    console.warn(
-      `${LOG_PREFIX} pushTokenPrice skipped: invalid price token=${tokenAddress} price=${price}`,
-    );
+    log.warn({ tokenAddress, price }, "pushTokenPrice skipped: invalid price");
     return;
   }
 
@@ -108,14 +107,9 @@ export async function pushTokenPrice(
       .ltrim(key, 0, MAX_PRICE_HISTORY - 1)
       .exec();
 
-    console.log(
-      `${LOG_PREFIX} Pushed price token=${tokenAddress} price=${price}`,
-    );
+    log.debug({ tokenAddress, price }, "Pushed price");
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(
-      `${LOG_PREFIX} pushTokenPrice failed token=${tokenAddress}: ${message}`,
-    );
+    logError(log, `pushTokenPrice failed token=${tokenAddress}`, error);
     throw error;
   }
 }
@@ -145,10 +139,7 @@ export async function getTokenPrices(tokenAddress: string): Promise<number[]> {
 
     return prices;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(
-      `${LOG_PREFIX} getTokenPrices failed token=${tokenAddress}: ${message}`,
-    );
+    logError(log, `getTokenPrices failed token=${tokenAddress}`, error);
     return [];
   }
 }

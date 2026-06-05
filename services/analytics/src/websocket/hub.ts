@@ -2,9 +2,10 @@ import type { Server as HttpServer } from "node:http";
 
 import { Server } from "socket.io";
 
+import { createLogger } from "../logging/logger";
 import type { PriceUpdatePayload, SecurityAlert } from "../models/types";
 
-const LOG_PREFIX = "[websocket]";
+const log = createLogger("websocket");
 export const SECURITY_FEED_ROOM = "security-feed";
 
 let io: Server | null = null;
@@ -24,14 +25,14 @@ export function initWebSocket(httpServer: HttpServer): Server {
         : SECURITY_FEED_ROOM;
 
     void socket.join(room);
-    console.log(`${LOG_PREFIX} Client connected id=${socket.id} room=${room}`);
+    log.info({ socketId: socket.id, room }, "Client connected");
 
     socket.on("disconnect", () => {
-      console.log(`${LOG_PREFIX} Client disconnected id=${socket.id}`);
+      log.info({ socketId: socket.id }, "Client disconnected");
     });
   });
 
-  console.log(`${LOG_PREFIX} Socket.IO ready room=${SECURITY_FEED_ROOM}`);
+  log.info({ room: SECURITY_FEED_ROOM }, "Socket.IO ready");
   return io;
 }
 
@@ -60,5 +61,5 @@ export async function closeWebSocket(): Promise<void> {
   const instance = io;
   io = null;
   await instance.close();
-  console.log(`${LOG_PREFIX} Socket.IO closed`);
+  log.info("Socket.IO closed");
 }

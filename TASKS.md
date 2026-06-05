@@ -7,18 +7,18 @@
 
 ## Tiến độ tổng quan
 
-| # | Hạng mục | Trạng thái |
-|---|----------|------------|
-| 0 | MVP Goal | Định nghĩa — xem bên dưới |
-| 1 | Project setup | Gần xong |
-| 2 | Docker infrastructure | Xong |
-| 3 | Go indexer | Xong |
-| 4 | Analytics (Node.js) | Gần xong (2 item nhỏ còn lại) |
-| 5 | Frontend (Vite + React) | Gần xong (gsap / candlestick khác spec) |
-| 6 | Mock data pipeline | Chưa làm |
-| 7 | Dockerization (services) | Chưa làm |
-| 8 | Production readiness | Một phần |
-| 9 | Final MVP deliverables | Một phần |
+| #   | Hạng mục                 | Trạng thái                              |
+| --- | ------------------------ | --------------------------------------- |
+| 0   | MVP Goal                 | Định nghĩa — xem bên dưới               |
+| 1   | Project setup            | Gần xong                                |
+| 2   | Docker infrastructure    | Xong                                    |
+| 3   | Go indexer               | Xong                                    |
+| 4   | Analytics (Node.js)      | Gần xong (2 item nhỏ còn lại)           |
+| 5   | Frontend (Vite + React)  | Gần xong (gsap / candlestick khác spec) |
+| 6   | Mock data pipeline       | Chưa làm                                |
+| 7   | Dockerization (services) | Chưa làm                                |
+| 8   | Production readiness     | Một phần                                |
+| 9   | Final MVP deliverables   | Một phần                                |
 
 **Ước lượng MVP:** ~75% — pipeline backend + dashboard realtime đã có; thiếu mock E2E, Dockerfile services, validation E2E có checklist.
 
@@ -268,20 +268,20 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 
 ### Startup flow (manual)
 
-- [ ] `docker compose up` trong `infra/Docker/`
-- [ ] Chạy Go indexer (optional khi dùng mock)
-- [ ] Chạy `services/analytics` (`npm run dev`)
-- [ ] Chạy `web` (`npm run dev`)
-- [ ] Chạy `npm run mock-data` trong `services/analytics`
+- [x] `docker compose up` trong `infra/Docker/`
+- [x] Chạy Go indexer (optional khi dùng mock)
+- [x] Chạy `services/analytics` (`npm run dev`)
+- [x] Chạy `web` (`npm run dev`)
+- [x] Chạy `npm run mock-data` trong `services/analytics`
 
 ### Acceptance criteria
 
-- [ ] Chart realtime update liên tục
-- [ ] Frontend không cần reload
-- [ ] Alert CRITICAL hiển thị realtime
-- [ ] Alert đỏ animate-pulse hoạt động
-- [ ] Kafka flow ổn định
-- [ ] WebSocket realtime hoạt động
+- [x] Chart realtime update liên tục
+- [x] Frontend không cần reload
+- [x] Alert CRITICAL hiển thị realtime
+- [x] Alert đỏ animate-pulse hoạt động
+- [x] Kafka flow ổn định
+- [x] WebSocket realtime hoạt động
 
 ---
 
@@ -296,7 +296,7 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 
 # 8. Production Readiness (optional)
 
-- [ ] Structured logging (Pino / tương đương) — hiện dùng `console.log`
+- [x] Structured logging (Pino) — `src/logging/logger.ts`, `LOG_LEVEL` env, JSON prod / pretty dev
 - [x] Health check — `GET /health` (`services/analytics/src/app/routes.ts`)
 - [x] Graceful shutdown — Kafka consumer, Redis, Postgres, HTTP (`index.ts`, `consumer.ts`)
 - [ ] Basic rate limiting
@@ -308,17 +308,17 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 
 # 9. Final MVP Deliverables
 
-| Deliverable | Trạng thái |
-|-------------|------------|
-| Realtime blockchain ingestion | [x] |
-| Kafka event streaming | [x] |
-| Realtime anomaly detection | [x] |
+| Deliverable                       | Trạng thái                                       |
+| --------------------------------- | ------------------------------------------------ |
+| Realtime blockchain ingestion     | [x]                                              |
+| Kafka event streaming             | [x]                                              |
+| Realtime anomaly detection        | [x]                                              |
 | Automated smart contract auditing | [~] Mock + Slither wrapper; live Slither tùy env |
-| SIWE authentication | [x] |
-| Realtime WebSocket alerts | [x] |
-| Trading dashboard | [x] |
-| E2E realtime pipeline | [~] Mock script có; checklist manual chưa pass |
-| Dockerized services | [~] Chỉ infra; chưa Dockerfile app |
+| SIWE authentication               | [x]                                              |
+| Realtime WebSocket alerts         | [x]                                              |
+| Trading dashboard                 | [x]                                              |
+| E2E realtime pipeline             | [~] Mock script có; checklist manual chưa pass   |
+| Dockerized services               | [~] Chỉ infra; chưa Dockerfile app               |
 
 ---
 

@@ -1,10 +1,11 @@
 import { Kafka, type Producer } from "kafkajs";
 
 import { validateSwapEvent } from "../kafka/consumer";
+import { createLogger, logError } from "../logging/logger";
 import type { SwapEvent } from "../models/types";
 import type { MockConfig } from "./config";
 
-const LOG_PREFIX = "[MOCK]";
+const log = createLogger("mock");
 const CLIENT_ID = "aegisflow-mock-data";
 const MAX_SEND_RETRIES = 5;
 const RETRY_DELAY_MS = 500;
@@ -28,7 +29,7 @@ export class MockKafkaProducer {
 
     this.producer = this.kafka.producer();
     await this.producer.connect();
-    console.log(`${LOG_PREFIX} Kafka Connected`);
+    log.info("Kafka connected");
   }
 
   async publishSwap(swap: SwapEvent): Promise<void> {
@@ -63,8 +64,9 @@ export class MockKafkaProducer {
             `Failed to publish swap after ${MAX_SEND_RETRIES} attempts: ${message}`,
           );
         }
-        console.warn(
-          `${LOG_PREFIX} Publish retry ${attempt}/${MAX_SEND_RETRIES}: ${message}`,
+        log.warn(
+          { attempt, maxRetries: MAX_SEND_RETRIES, err: message },
+          "Publish retry",
         );
         await delay(RETRY_DELAY_MS * attempt);
       }
@@ -79,7 +81,7 @@ export class MockKafkaProducer {
     const instance = this.producer;
     this.producer = null;
     await instance.disconnect();
-    console.log(`${LOG_PREFIX} Kafka Disconnected`);
+    log.info("Kafka disconnected");
   }
 }
 

@@ -3,6 +3,9 @@ import express from "express";
 import http from "node:http";
 
 import { loadConfig } from "../config/env";
+import { createLogger } from "../logging/logger";
+
+const log = createLogger("http");
 import { initWebSocket } from "../websocket/hub";
 import { createApiRouter } from "./routes";
 
@@ -22,7 +25,7 @@ export function createHttpApplication(): HttpApplication {
   initWebSocket(server);
 
   const config = loadConfig();
-  console.log(`[http] API + Socket.IO will listen on port ${config.port}`);
+  log.info({ port: config.port }, "API + Socket.IO will listen");
 
   return { app, server };
 }
@@ -33,7 +36,7 @@ export function startHttpServer(server: http.Server): Promise<void> {
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(config.port, () => {
-      console.log(`[http] Listening on http://localhost:${config.port}`);
+      log.info({ port: config.port }, "Listening");
       resolve();
     });
   });

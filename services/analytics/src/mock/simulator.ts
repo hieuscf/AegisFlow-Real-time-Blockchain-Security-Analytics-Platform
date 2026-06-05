@@ -1,10 +1,11 @@
 import { calculateRealtimePrice } from "../analytics/priceEngine";
+import { createLogger, logError } from "../logging/logger";
 import type { MockConfig } from "./config";
 import { MOCK_TOKEN0 } from "./constants";
 import type { MockKafkaProducer } from "./kafkaProducer";
 import { buildSwapEvent } from "./swapBuilder";
 
-const LOG_PREFIX = "[MOCK]";
+const log = createLogger("mock");
 
 const NORMAL_WALK_MIN_PCT = 0.01;
 const NORMAL_WALK_MAX_PCT = 0.03;
@@ -31,10 +32,14 @@ export class MarketSimulator {
     }
 
     this.running = true;
-    console.log(
-      `${LOG_PREFIX} Simulation started initialPrice=${this.currentPrice.toFixed(2)} ` +
-        `swapEvery=${this.config.swapIntervalMs}ms crashEvery=${this.config.crashIntervalMs}ms ` +
-        `token=${MOCK_TOKEN0}`,
+    log.info(
+      {
+        initialPrice: this.currentPrice,
+        swapIntervalMs: this.config.swapIntervalMs,
+        crashIntervalMs: this.config.crashIntervalMs,
+        token: MOCK_TOKEN0,
+      },
+      "Simulation started",
     );
 
     void this.emitSwap(this.currentPrice);
@@ -61,7 +66,7 @@ export class MarketSimulator {
       this.crashTimer = null;
     }
 
-    console.log(`${LOG_PREFIX} Simulation stopped`);
+    log.info("Simulation stopped");
   }
 
   private async tickNormal(): Promise<void> {
@@ -81,7 +86,7 @@ export class MarketSimulator {
     const retainFactor = randomBetween(CRASH_RETAIN_MIN, CRASH_RETAIN_MAX);
     this.currentPrice = this.currentPrice * retainFactor;
 
-    console.log(`${LOG_PREFIX} CRASH EVENT Injected`);
+    log.warn("Crash event injected");
     await this.emitSwap(this.currentPrice);
   }
 
@@ -91,14 +96,13 @@ export class MarketSimulator {
     try {
       await this.producer.publishSwap(swap);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`${LOG_PREFIX} Failed to publish swap: ${message}`);
+      logError(log, "Failed to publish swap", error);
       return;
     }
 
     const derived = calculateRealtimePrice(swap).token0PriceInToken1;
     const loggedPrice = derived > 0 ? derived : targetPrice;
-    console.log(`${LOG_PREFIX} Generated Swap Price: ${loggedPrice.toFixed(2)}`);
+    log.info({ price: loggedPrice }, "Generated swap price");
   }
 }
 

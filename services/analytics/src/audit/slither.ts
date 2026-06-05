@@ -2,11 +2,12 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
 import { loadConfig } from "../config/env";
+import { createLogger, logError } from "../logging/logger";
 import type { AuditResult } from "../models/types";
 import { buildMockAuditResult, parseSlitherOutput } from "./parser";
 
 const execAsync = promisify(exec);
-const LOG_PREFIX = "[audit]";
+const log = createLogger("audit");
 
 let activeAudits = 0;
 const queue: Array<() => void> = [];
@@ -56,7 +57,7 @@ export async function runContractAudit(
   }
 
   if (!config.audit.enabled) {
-    console.log(`${LOG_PREFIX} Slither disabled, returning mock result`);
+    log.info({ contractAddress: normalized }, "Slither disabled, returning mock result");
     return buildMockAuditResult(normalized);
   }
 
@@ -64,7 +65,7 @@ export async function runContractAudit(
 
   try {
     const command = `${config.audit.command} ${normalized} --json -`;
-    console.log(`${LOG_PREFIX} Running: ${command}`);
+    log.info({ command }, "Running Slither");
 
     const { stdout, stderr } = await execAsync(command, {
       timeout: config.audit.timeoutMs,
@@ -74,7 +75,7 @@ export async function runContractAudit(
     return parseSlitherOutput(normalized, stdout, stderr);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`${LOG_PREFIX} Slither failed: ${message}`);
+    logError(log, "Slither failed", error);
 
     return {
       contractAddress: normalized,

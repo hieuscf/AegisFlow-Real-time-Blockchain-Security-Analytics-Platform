@@ -3,15 +3,17 @@ import { Router, type Request, type Response } from "express";
 import { buildSiweMessage, verifySiweSignature } from "../auth/siwe";
 import { signSessionToken } from "../auth/jwt";
 import { issueNonce } from "../auth/nonce";
+import { logError, createLogger } from "../logging/logger";
 import { createNotificationsRouter } from "./routes/notifications";
+
+const log = createLogger("api");
 
 function asyncHandler(
   handler: (req: Request, res: Response) => Promise<void>,
 ): (req: Request, res: Response) => void {
   return (req, res) => {
     void handler(req, res).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error("[api] Request failed:", message);
+      logError(log, "Request failed", error);
       res.status(500).json({ error: "Internal server error" });
     });
   };

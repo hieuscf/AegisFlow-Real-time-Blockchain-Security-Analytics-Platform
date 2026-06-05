@@ -1,5 +1,6 @@
 import { registerAlertHandler } from "./alerts/engine";
 import { setPostgresAvailable } from "./database/availability";
+import { createLogger, logError } from "./logging/logger";
 import { pushNotification } from "./notifications/store";
 import {
   createHttpApplication,
@@ -17,6 +18,7 @@ import { disconnectKafkaProducer } from "./kafka/producer";
 import { connectRedis, disconnectRedis } from "./redis/client";
 import { broadcastAlert, closeWebSocket } from "./websocket/hub";
 
+const log = createLogger("core");
 const SHUTDOWN_TIMEOUT_MS = 20_000;
 
 let isShuttingDown = false;
@@ -32,17 +34,18 @@ function registerAlertHandlers(): void {
 async function logStartup(): Promise<void> {
   const config = loadConfig();
 
-  console.log("[analytics-core] Starting AegisFlow Analytics Core");
-  console.log(
-    `[analytics-core] Kafka brokers=${config.kafka.brokers.join(",")} ` +
-      `group=${config.kafka.groupId} topic=${config.kafka.topic}`,
+  log.info("Starting AegisFlow Analytics Core");
+  log.info(
+    {
+      brokers: config.kafka.brokers,
+      groupId: config.kafka.groupId,
+      topic: config.kafka.topic,
+      alertsTopic: config.kafka.securityAlertsTopic,
+      redisUrl: config.redis.url,
+      port: config.port,
+    },
+    "Service configuration loaded",
   );
-  console.log(
-    `[analytics-core] Kafka alerts topic=${config.kafka.securityAlertsTopic}`,
-  );
-  console.log(`[analytics-core] Redis url=${config.redis.url}`);
-  console.log(`[analytics-core] Postgres configured`);
-  console.log(`[analytics-core] HTTP port=${config.port}`);
 
   registerAlertHandlers();
 
@@ -51,22 +54,23 @@ async function logStartup(): Promise<void> {
 
   await connectRedis();
 
-  // Postgres is optional for local dev — WebSocket + Kafka still run without it.
   try {
     await connectPostgres();
     await initSchema();
     setPostgresAvailable(true);
-    console.log("[analytics-core] Postgres connected");
+    log.info("Postgres connected");
   } catch (error) {
     setPostgresAvailable(false);
-    const msg = error instanceof Error ? error.message : String(error);
-    console.warn(`[analytics-core] Postgres unavailable (${msg}) — alerts will not be persisted`);
+    log.warn(
+      { err: error instanceof Error ? error.message : String(error) },
+      "Postgres unavailable — alerts will not be persisted",
+    );
   }
 
   await startHttpServer(httpServer);
   await startKafkaConsumer();
 
-  console.log("[analytics-core] Service ready");
+  log.info("Service ready");
 }
 
 async function shutdown(signal: string): Promise<void> {
@@ -75,10 +79,10 @@ async function shutdown(signal: string): Promise<void> {
   }
   isShuttingDown = true;
 
-  console.log(`[analytics-core] Received ${signal}, shutting down...`);
+  log.info({ signal }, "Shutting down");
 
   const forceExitTimer = setTimeout(() => {
-    console.error("[analytics-core] Shutdown timeout exceeded, forcing exit");
+    log.error("Shutdown timeout exceeded, forcing exit");
     process.exit(1);
   }, SHUTDOWN_TIMEOUT_MS);
 
@@ -94,10 +98,9 @@ async function shutdown(signal: string): Promise<void> {
 
     await disconnectRedis();
     await disconnectPostgres();
-    console.log("[analytics-core] Shutdown complete");
+    log.info("Shutdown complete");
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[analytics-core] Shutdown error:", message);
+    logError(log, "Shutdown error", error);
   } finally {
     clearTimeout(forceExitTimer);
     process.exit(0);
@@ -114,12 +117,12 @@ function registerSignalHandlers(): void {
   });
 
   process.on("uncaughtException", (error: Error) => {
-    console.error("[analytics-core] Uncaught exception:", error);
+    logError(log, "Uncaught exception", error);
     void shutdown("uncaughtException");
   });
 
   process.on("unhandledRejection", (reason: unknown) => {
-    console.error("[analytics-core] Unhandled rejection:", reason);
+    logError(log, "Unhandled rejection", reason);
     void shutdown("unhandledRejection");
   });
 }
@@ -130,8 +133,7 @@ async function main(): Promise<void> {
   try {
     await logStartup();
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[analytics-core] Startup failed:", message);
+    logError(log, "Startup failed", error);
     process.exit(1);
   }
 }

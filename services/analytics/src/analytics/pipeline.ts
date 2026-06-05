@@ -4,6 +4,7 @@ import { runContractAudit } from "../audit/slither";
 import { loadConfig } from "../config/env";
 import { saveAlert, saveAuditResult } from "../database/repository";
 import { publishSecurityAlert } from "../kafka/producer";
+import { createLogger, logError } from "../logging/logger";
 import type { SwapEvent } from "../models/types";
 import { getTokenPrices, pushTokenPrice } from "../redis/client";
 import { broadcastAlert, broadcastPriceUpdate } from "../websocket/hub";
@@ -12,7 +13,7 @@ import {
   calculateRealtimePrice,
 } from "./priceEngine";
 
-const LOG_PREFIX = "[pipeline]";
+const log = createLogger("pipeline");
 
 export interface TokenAnalyticsContext {
   swap: SwapEvent;
@@ -57,8 +58,9 @@ export async function runTokenAnalytics(
     return;
   }
 
-  console.warn(
-    `${LOG_PREFIX} Anomaly token=${tokenAddress} drop=${anomaly.dropPercent}%`,
+  log.warn(
+    { tokenAddress, dropPercent: anomaly.dropPercent },
+    "Anomaly detected",
   );
 
   const alert = await createAlert({
@@ -86,8 +88,7 @@ export async function runTokenAnalytics(
   try {
     await saveAlert(alert);
   } catch (dbErr) {
-    const dbMsg = dbErr instanceof Error ? dbErr.message : String(dbErr);
-    console.warn(`${LOG_PREFIX} saveAlert skipped (postgres unavailable): ${dbMsg}`);
+    logError(log, "saveAlert skipped (postgres unavailable)", dbErr);
   }
   await publishSecurityAlert(alert);
 
@@ -96,8 +97,7 @@ export async function runTokenAnalytics(
   try {
     auditId = await saveAuditResult(audit);
   } catch (dbErr) {
-    const dbMsg = dbErr instanceof Error ? dbErr.message : String(dbErr);
-    console.warn(`${LOG_PREFIX} saveAuditResult skipped (postgres unavailable): ${dbMsg}`);
+    logError(log, "saveAuditResult skipped (postgres unavailable)", dbErr);
   }
 
   const auditAlert = await createAlert({
