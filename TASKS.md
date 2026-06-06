@@ -16,7 +16,7 @@
 | 4   | Analytics (Node.js)      | Gần xong (2 item nhỏ còn lại)           |
 | 5   | Frontend (Vite + React)  | Gần xong (gsap / candlestick khác spec) |
 | 6   | Mock data pipeline       | Chưa làm                                |
-| 7   | Dockerization (services) | Chưa làm                                |
+| 7   | Dockerization (services) | Xong                                    |
 | 8   | Production readiness     | Một phần                                |
 | 9   | Final MVP deliverables   | Một phần                                |
 
@@ -287,10 +287,10 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 
 # 7. Dockerization (application services)
 
-- [ ] Dockerfile multi-stage — `services/indexer`
-- [ ] Dockerfile multi-stage — `services/analytics`
-- [ ] Dockerfile — `web/`
-- [ ] `docker-compose` gộp infra + app services (optional)
+- [x] Dockerfile multi-stage — `services/indexer`
+- [x] Dockerfile multi-stage — `services/analytics`
+- [x] Dockerfile — `web/` (nginx SPA)
+- [x] `docker-compose` gộp infra + app services — `infra/Docker/docker-compose.apps.yml`
 
 ---
 
@@ -318,7 +318,7 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 | Realtime WebSocket alerts         | [x]                                              |
 | Trading dashboard                 | [x]                                              |
 | E2E realtime pipeline             | [~] Mock script có; checklist manual chưa pass   |
-| Dockerized services               | [~] Chỉ infra; chưa Dockerfile app               |
+| Dockerized services               | [x] Dockerfile + `docker-compose.apps.yml`      |
 
 ---
 
@@ -330,6 +330,10 @@ Dùng để test toàn bộ hệ thống mà không cần blockchain thật.
 2. services/analytics → npm run dev
 3. services/indexer   → go run ./cmd   (cần ETH_WS_URL)
 4. web/               → npm run dev
+
+# Hoặc full stack Docker (infra + analytics + web):
+infra/Docker/ → docker compose -f docker-compose.yml -f docker-compose.apps.yml up -d --build
+# Indexer (optional): thêm --profile indexer và RPC_WS_URL trong .env
 ```
 
 **Port mặc định:** Analytics API + Socket.IO `8080` · Kafka UI `8089` · Web Vite `5173` · Kafka `9092` · Redis `6379` · Postgres `5432`

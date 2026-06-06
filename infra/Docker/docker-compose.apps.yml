@@ -1,0 +1,118 @@
+# =============================================================================
+# AegisFlow — Application services (overlay)
+# =============================================================================
+# Merges with infra/docker-compose.yml. Run from this directory:
+#
+#   copy .env.example .env
+#   # Set JWT_SECRET (min 32 chars) and review DATABASE_URL_DOCKER / REDIS_URL_DOCKER
+#
+#   docker compose -f docker-compose.yml -f docker-compose.apps.yml up -d --build
+#
+# Optional Go indexer (requires RPC_WS_URL in .env):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.apps.yml --profile indexer up -d --build
+#
+# Web VITE_* URLs are baked at image build time — browser must reach Analytics on the host
+# (default http://localhost:8080), not the internal Docker hostname.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Analytics Core — Kafka consumer, anomaly detection, WebSocket, REST API
+  # ---------------------------------------------------------------------------
+  analytics:
+    build:
+      context: ../../services/analytics
+      dockerfile: Dockerfile
+    image: aegisflow/analytics:local
+    container_name: aegis_analytics
+    hostname: analytics
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${ANALYTICS_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_AUTH_WINDOW_MS: ${RATE_LIMIT_AUTH_WINDOW_MS:-900000}
+      RATE_LIMIT_AUTH_MAX: ${RATE_LIMIT_AUTH_MAX:-20}
+
+      KAFKA_BROKERS: ${KAFKA_INTERNAL_BOOTSTRAP:-kafka:29092}
+      KAFKA_GROUP_ID: ${KAFKA_GROUP_ID:-analytics-core-group}
+      KAFKA_TOPIC: ${KAFKA_TOPIC_MARKET_SWAPS:-market-swaps}
+      KAFKA_SECURITY_ALERTS_TOPIC: ${KAFKA_TOPIC_SECURITY_ALERTS:-security-alerts}
+
+      REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}}
+
+      JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret_min_32_chars}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      SIWE_DOMAIN: ${SIWE_DOMAIN:-localhost}
+      SIWE_URI: ${SIWE_URI:-http://localhost:8080}
+      SIWE_NONCE_TTL_SECONDS: ${SIWE_NONCE_TTL_SECONDS:-300}
+
+      ANOMALY_DROP_THRESHOLD: ${ANOMALY_DROP_THRESHOLD:-0.5}
+      ALERT_DEDUPE_TTL_SECONDS: ${ALERT_DEDUPE_TTL_SECONDS:-60}
+
+      SLITHER_ENABLED: ${SLITHER_ENABLED:-false}
+      SLITHER_COMMAND: ${SLITHER_COMMAND:-slither}
+      MAX_CONCURRENT_AUDITS: ${MAX_CONCURRENT_AUDITS:-2}
+      SLITHER_TIMEOUT_MS: ${SLITHER_TIMEOUT_MS:-120000}
+    networks:
+      - aegis_network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Web — Vite SPA served by nginx
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ../../web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_WS_URL: ${VITE_WS_URL:-}
+        VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
+    image: aegisflow/web:local
+    container_name: aegis_web
+    hostname: web
+    depends_on:
+      analytics:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    networks:
+      - aegis_network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Go Indexer — optional; needs ETH WebSocket RPC (profile: indexer)
+  # ---------------------------------------------------------------------------
+  indexer:
+    profiles: ["indexer", "full"]
+    build:
+      context: ../../services/indexer
+      dockerfile: Dockerfile
+    image: aegisflow/indexer:local
+    container_name: aegis_indexer
+    hostname: indexer
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_BROKERS: ${KAFKA_INTERNAL_BOOTSTRAP:-kafka:29092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC_MARKET_SWAPS:-market-swaps}
+      RPC_WS_URL: ${RPC_WS_URL:-}
+      UNISWAP_FACTORY_ADDRESS: ${UNISWAP_FACTORY_ADDRESS:-0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f}
+    networks:
+      - aegis_network
+    restart: unless-stopped

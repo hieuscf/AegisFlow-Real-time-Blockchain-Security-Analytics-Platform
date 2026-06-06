@@ -218,7 +218,7 @@ function AnalyticsKpiRow({ stats }: { stats: TokenStat[] }) {
             ? `MA $${topToken.movingAverage.toFixed(4)} · ${topToken.deviation >= 0 ? '+' : ''}${topToken.deviation.toFixed(1)}%`
             : 'Awaiting price stream'
         }
-        icon={topToken?.deviation >= 0
+        icon={(topToken?.deviation ?? 0) >= 0
           ? <TrendingUp  className="h-5 w-5" />
           : <TrendingDown className="h-5 w-5" />
         }

@@ -7,10 +7,14 @@ name: aegisflow
 #
 # Secrets & credentials: copy .env.example → .env (never commit .env)
 #
-# Quick start (run from this directory: infra/docker):
+# Quick start (run from this directory: infra/Docker):
 #
 #   copy .env.example .env
-#   docker compose up -d          # Start all services in background
+#   docker compose up -d          # Infra only (Kafka, Redis, Postgres, …)
+#
+# Full stack (infra + analytics + web):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.apps.yml up -d --build
 #   docker compose ps             # Check service status
 #   docker compose logs kafka     # Kafka broker logs
 #   docker compose logs kafka-init  # Topic bootstrap logs
