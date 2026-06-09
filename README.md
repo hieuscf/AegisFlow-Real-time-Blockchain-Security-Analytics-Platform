@@ -1,129 +1,231 @@
 # AegisFlow
 
-Real-time **Blockchain Security & Analytics** platform — event-driven microservices with Kafka, PostgreSQL, and Redis.
+Real-time **Blockchain Security & Analytics** platform — ingest Uniswap V2 swaps, stream events through Kafka, detect price anomalies, trigger Slither contract audits, and push security alerts to a live dashboard via WebSocket.
 
-## Monorepo layout
+Built as an MVP with production-style patterns (event-driven microservices, structured logging, health checks, Docker) while staying lightweight for local development.
+
+## Features
+
+| Area | Capability |
+|------|------------|
+| **Ingestion** | Go indexer — Uniswap V2 swap events over WebSocket RPC → Kafka |
+| **Streaming** | Kafka topics `market-swaps`, `security-alerts` |
+| **Analytics** | Moving-average price engine, anomaly detection (configurable drop threshold) |
+| **Security** | Slither wrapper (mock when `SLITHER_ENABLED=false`) triggered on anomalies |
+| **Alerts** | INFO / WARNING / CRITICAL with deduplication; REST + Socket.IO |
+| **Auth** | SIWE (Sign-In with Ethereum) + JWT sessions |
+| **Frontend** | Vite + React dashboard — realtime charts, analytics KPIs, alert feed |
+| **Testing** | Mock data pipeline (`npm run mock-data`) — no blockchain required |
+| **Ops** | Pino logging, rate limiting, `/health` + `/health/ready`, graceful shutdown |
+
+## Architecture
 
 ```txt
-aegisflow/
-├── apps/
-│   ├── web/                 # Next.js dashboard (port 3000)
-│   ├── admin/               # Next.js admin (port 3001)
-│   └── gateway/             # API Gateway — NestJS (port 4000)
+Ethereum (WS RPC)
+       │
+       ▼
+┌──────────────┐     market-swaps      ┌─────────────────┐
+│ Go Indexer   │ ───────────────────►  │  Apache Kafka   │
+│ (optional)   │                       └────────┬────────┘
+└──────────────┘                                │
+       ▲                                        ▼
+       │ mock-data.ts                   ┌─────────────────┐
+       └────────────────────────────────│ Analytics Core  │
+                                        │ Node.js + TS    │
+                                        └────────┬────────┘
+                    ┌──────────────────────┼──────────────────────┐
+                    ▼                      ▼                      ▼
+              PostgreSQL               Redis              Socket.IO
+              (alerts, audits)        (cache)            + REST API
+                                                         │
+                                                         ▼
+                                                   ┌──────────┐
+                                                   │ web/     │
+                                                   │ React UI │
+                                                   └──────────┘
+```
+
+## Repository layout
+
+```txt
+AegisFlow/
 ├── services/
-│   ├── indexer/             # Go — blockchain indexing
-│   ├── whale-tracker/       # Go — whale wallet tracking
-│   ├── mev-engine/          # Go — MEV detection
-│   ├── anomaly-engine/      # NestJS — price/market anomalies
-│   ├── security-engine/     # Python FastAPI — contract analysis
-│   └── notification-service/# Node — alerts (Telegram, WS, …)
-├── packages/
-│   ├── tsconfig/            # Shared TypeScript configs
-│   ├── config/              # Env validation (Zod)
-│   ├── logger/              # Structured logging (Pino)
-│   ├── kafka/               # KafkaJS client helpers
-│   └── protobuf/            # Protobuf schemas (placeholder)
-└── infra/
-    ├── docker/              # Docker Compose + base Dockerfiles
-    ├── k8s/                 # Kubernetes manifests
-    ├── terraform/           # IaC placeholder
-    └── monitoring/          # Prometheus config
+│   ├── indexer/          # Go — Uniswap V2 swap listener → Kafka
+│   └── analytics/        # Node.js — consumer, anomaly, alerts, SIWE, WebSocket
+├── web/                  # Vite + React — landing, dashboard, analytics, alerts
+├── infra/
+│   └── Docker/           # Docker Compose (Kafka, Redis, Postgres) + app overlay
+├── ARCHITECTURE.md
+├── PROJECT_CONTEXT.md
+└── TASKS.md              # MVP checklist & progress
 ```
 
 ## Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Node.js | ≥ 20 |
-| pnpm | ≥ 9 |
-| Docker | latest |
-| Go | ≥ 1.22 (for Go services) |
-| Python | ≥ 3.11 (for security-engine) |
+| Tool | Version | Used by |
+|------|---------|---------|
+| **Node.js** | ≥ 20 | `web/`, `services/analytics/` |
+| **Docker** | latest | Infrastructure + optional full stack |
+| **Go** | ≥ 1.22 | `services/indexer/` (optional — use mock data instead) |
 
 ## Quick start
 
-### 1. Infrastructure
+### Option A — Docker full stack (recommended)
+
+From `infra/Docker/`:
 
 ```powershell
-pnpm infra:up
+copy .env.example .env
+# Edit .env: POSTGRES_PASSWORD, JWT_SECRET (min 32 chars), DATABASE_URL_DOCKER
+
+docker compose -f docker-compose.yml -f docker-compose.apps.yml up -d --build
 ```
 
 | Service | URL |
 |---------|-----|
+| Web (nginx) | http://localhost:5173 |
+| Analytics API + Socket.IO | http://localhost:8080 |
+| Kafka UI | http://localhost:8089 |
+| pgAdmin | http://localhost:5050 |
 | PostgreSQL | `localhost:5432` |
 | Redis | `localhost:6379` |
 | Kafka | `localhost:9092` |
-| Kafka UI | http://localhost:8089 |
 
-### 2. Environment
+Optional Go indexer (requires `RPC_WS_URL` in `.env`):
 
 ```powershell
+docker compose -f docker-compose.yml -f docker-compose.apps.yml --profile indexer up -d --build
+```
+
+Stop:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.apps.yml down
+```
+
+### Option B — Local development
+
+**1. Infrastructure**
+
+```powershell
+cd infra\Docker
 copy .env.example .env
-copy infra\docker\.env.example infra\docker\.env
+docker compose up -d
 ```
 
-### 3. Install & build (Node/TS workspace)
+**2. Analytics**
 
 ```powershell
-corepack enable
-pnpm install
-pnpm build
+cd services\analytics
+copy .env.example .env
+# Set JWT_SECRET (min 32 chars), DATABASE_URL, REDIS_URL, KAFKA_BROKERS
+npm install
+npm run dev
 ```
 
-### 4. Development
+**3. Web**
 
 ```powershell
-pnpm dev          # Turbo — all packages with dev script
+cd web
+copy .env.example .env
+# Set VITE_API_BASE_URL, VITE_WALLETCONNECT_PROJECT_ID
+npm install
+npm run dev
 ```
 
-Individual apps:
+**4. Mock data** (skip indexer — simulates swaps + periodic crashes)
 
 ```powershell
-pnpm --filter @aegisflow/web dev
-pnpm --filter @aegisflow/gateway dev
+cd services\analytics
+npm run mock-data
 ```
 
-### Go services
+**5. Indexer** (optional — live Ethereum data)
 
 ```powershell
-go run ./services/indexer/cmd/indexer
-go run ./services/whale-tracker/cmd/whale-tracker
-go run ./services/mev-engine/cmd/mev-engine
+cd services\indexer
+copy .env.example .env
+# Set RPC_WS_URL (Alchemy/Infura), KAFKA_BROKERS
+go run ./cmd
 ```
 
-### Python security engine
+Open http://localhost:5173 → `/dashboard`, `/analytics`, `/alerts`.
 
-```powershell
-cd services/security-engine
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -e .
-uvicorn app.main:app --reload --port 5000
-```
+## Environment
+
+| Location | Purpose |
+|----------|---------|
+| `infra/Docker/.env` | Postgres, Redis, Kafka, JWT, Docker-internal URLs, `VITE_*` build args |
+| `services/analytics/.env` | Analytics runtime (Kafka, Redis, Postgres, SIWE, Slither, rate limits) |
+| `services/indexer/.env` | `RPC_WS_URL`, `KAFKA_BROKERS`, Uniswap factory address |
+| `web/.env` | `VITE_API_BASE_URL`, `VITE_WS_URL`, `VITE_WALLETCONNECT_PROJECT_ID` |
+
+Never commit `.env` files. Use `.env.example` as templates.
+
+## API (Analytics — port 8080)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Liveness |
+| `GET` | `/health/ready` | Readiness (Redis check) |
+| `GET` | `/api/auth/nonce` | SIWE nonce (`?address=0x…`) |
+| `POST` | `/api/auth/verify` | Verify SIWE signature → JWT |
+| `GET` | `/api/notifications` | List alerts (query: `limit`, `severity`) |
+| `GET` | `/api/notifications/stats` | Alert counts by severity |
+| `GET` | `/api/notifications/:id` | Single notification |
+| `GET` | `/api/alerts` | Legacy alias for notifications |
+
+**WebSocket:** Socket.IO on the same host as the API. Client joins room `security-feed` for realtime `CRITICAL_ALERT` and price updates.
+
+## Kafka topics
+
+| Topic | Producer | Consumer |
+|-------|----------|----------|
+| `market-swaps` | Indexer, mock-data | Analytics |
+| `security-alerts` | Analytics | (extensible) |
+
+Topics are created automatically by the `kafka-init` service on stack startup.
 
 ## Scripts
 
+### `services/analytics`
+
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start dev servers (Turbo) |
-| `pnpm build` | Build all TS packages & apps |
-| `pnpm lint` | Lint workspace |
-| `pnpm infra:up` | Start Docker Compose stack |
-| `pnpm infra:down` | Stop stack |
+| `npm run dev` | Dev server with hot reload |
+| `npm run build` | Compile TypeScript → `dist/` |
+| `npm start` | Run production build |
+| `npm run mock-data` | Publish fake swaps + crash events to Kafka |
 
-## Kafka topics (planned)
+### `web`
 
-- `market-swaps`
-- `liquidity-events`
-- `whale-transfers`
-- `security-alerts`
-- `mev-events`
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Vite dev server (port 5173) |
+| `npm run build` | Production bundle |
+| `npm run preview` | Preview production build |
+| `npm run lint` | ESLint |
+
+### `services/indexer`
+
+```powershell
+go run ./cmd          # Run indexer
+go build -o indexer ./cmd   # Build binary
+```
+
+### Docker (individual images)
+
+```powershell
+docker build -t aegisflow-analytics:local .\services\analytics
+docker build -t aegisflow-web:local --build-arg VITE_API_BASE_URL=http://localhost:8080 .\web
+docker build -t aegisflow-indexer:local .\services\indexer
+```
 
 ## Documentation
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md)
-- [PROJECT_CONTEXT.md](./PROJECT_CONTEXT.md)
-- [TASKS.md](./TASKS.md)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — system design & data flow
+- [PROJECT_CONTEXT.md](./PROJECT_CONTEXT.md) — goals & scope (Vietnamese)
+- [TASKS.md](./TASKS.md) — MVP checklist & implementation status
 
 ## License
 
