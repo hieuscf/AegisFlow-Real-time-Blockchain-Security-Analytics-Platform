@@ -1,10 +1,12 @@
 import { useCallback } from 'react';
 import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
+
+import { SIWE_CHAIN_ID, getChainName } from '@/config/chains';
 import { requestSiweNonce, verifySiweLogin } from '@/features/wallet/services/siweAuth';
 import { useAuthStore } from '@/store/authStore';
 
 export function useSiweAuth() {
-  const { address, isConnected } = useAccount();
+  const { address, chainId, isConnected } = useAccount();
   const { signMessageAsync, isPending: isSignPending } = useSignMessage();
   const { disconnect, isPending: isDisconnectPending } = useDisconnect();
 
@@ -24,6 +26,13 @@ export function useSiweAuth() {
       return;
     }
 
+    if (chainId !== SIWE_CHAIN_ID) {
+      setError(
+        `Switch to ${getChainName(SIWE_CHAIN_ID)} (chain ${SIWE_CHAIN_ID}) before signing in.`,
+      );
+      return;
+    }
+
     setSigning();
     clearError();
 
@@ -39,6 +48,7 @@ export function useSiweAuth() {
     }
   }, [
     address,
+    chainId,
     isConnected,
     setSigning,
     clearError,

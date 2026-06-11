@@ -109,7 +109,7 @@ export function Header({ className }: HeaderProps) {
       {/* Right */}
       <div className="flex items-center gap-2.5">
         <SiweControls />
-        <ConnectButton showBalance={false} chainStatus="none" accountStatus="avatar" />
+        <ConnectButton showBalance chainStatus="icon" accountStatus="address" />
       </div>
     </header>
   );

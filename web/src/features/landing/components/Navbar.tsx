@@ -1,3 +1,4 @@
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -64,14 +65,12 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/dashboard" className="text-sm text-aegis-muted hover:text-white transition-colors">
-              Sign In
-            </Link>
+            <ConnectButton chainStatus="none" showBalance={false} accountStatus="avatar" />
             <Link
               to="/dashboard"
               className="px-4 py-2 rounded-lg text-sm font-semibold bg-aegis-primary text-aegis-bg hover:bg-aegis-primary/90 transition-all glow-primary active:scale-95"
             >
-              Start Monitoring
+              Dashboard
             </Link>
           </div>
 
@@ -112,13 +111,14 @@ export default function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <div className="pt-3 border-t border-aegis-border mt-3">
+              <div className="space-y-3 pt-3 border-t border-aegis-border mt-3">
+                <ConnectButton chainStatus="none" showBalance={false} />
                 <Link
                   to="/dashboard"
                   className="block w-full text-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-aegis-primary text-aegis-bg"
                   onClick={() => setMobileOpen(false)}
                 >
-                  Start Monitoring
+                  Dashboard
                 </Link>
               </div>
             </div>

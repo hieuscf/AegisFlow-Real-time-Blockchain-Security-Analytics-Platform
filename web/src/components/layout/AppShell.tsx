@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { useWebSocketConnection } from '@/hooks/useWebSocketConnection';
-import { Web3Provider } from '@/providers/Web3Provider';
 import { AppLayout } from './AppLayout';
 import { DashboardLayout } from './DashboardLayout';
 
@@ -15,20 +14,18 @@ function PageFallback() {
 }
 
 /**
- * Shared shell for /dashboard, /analytics, /alerts — keeps Web3 + WebSocket alive across navigations.
+ * Shared shell for dashboard routes — keeps WebSocket alive across navigations.
  */
 export function AppShell() {
   useWebSocketConnection();
 
   return (
-    <Web3Provider>
-      <AppLayout>
-        <DashboardLayout>
-          <Suspense fallback={<PageFallback />}>
-            <Outlet />
-          </Suspense>
-        </DashboardLayout>
-      </AppLayout>
-    </Web3Provider>
+    <AppLayout>
+      <DashboardLayout>
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
+      </DashboardLayout>
+    </AppLayout>
   );
 }
