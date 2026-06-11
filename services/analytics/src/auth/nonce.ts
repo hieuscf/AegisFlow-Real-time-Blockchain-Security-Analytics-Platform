@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
+import { getAddress, isAddress } from "ethers";
 
+import { BadRequestError } from "../app/errors";
 import { loadConfig } from "../config/env";
 import { getRedisClient } from "../redis/client";
 
@@ -8,10 +10,12 @@ function nonceKey(address: string): string {
 }
 
 export async function issueNonce(address: string): Promise<string> {
-  const normalized = address.trim().toLowerCase();
-  if (!/^0x[a-f0-9]{40}$/.test(normalized)) {
-    throw new Error("Invalid wallet address");
+  const trimmed = address.trim();
+  if (!isAddress(trimmed)) {
+    throw new BadRequestError("Invalid wallet address");
   }
+
+  const normalized = getAddress(trimmed).toLowerCase();
 
   const nonce = randomBytes(16).toString("hex");
   const config = loadConfig();

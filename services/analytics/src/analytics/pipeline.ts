@@ -115,7 +115,12 @@ export async function runTokenAnalytics(
   });
 
   if (auditAlert) {
-    await saveAlert(auditAlert);
+    try {
+      await saveAlert(auditAlert);
+    } catch (dbErr) {
+      logError(log, "saveAlert skipped (postgres unavailable)", dbErr);
+    }
+    await publishSecurityAlert(auditAlert);
   }
 }
 
